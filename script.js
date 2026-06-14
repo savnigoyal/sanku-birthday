@@ -85,14 +85,58 @@ document.body.addEventListener('click', () => {
     playBirthdayMusic();
 }, { once: true });
 
+const heartBackground = document.getElementById('heartBackground');
+let heartbeatSyncTimer = null;
+
 function showSurprise() {
     surpriseModal.classList.remove('hidden');
+    createBackgroundHearts();
 }
 
 function hideSurprise() {
     surpriseModal.classList.add('hidden');
 }
 
+function createBackgroundHearts() {
+    if (!heartBackground || heartBackground.dataset.created) return;
++    const colors = ['#ff657f', '#ff9fb7', '#ffccd9', '#e0355b', '#ff3c79'];
++    const total = 42;
++    for (let i = 0; i < total; i++) {
++        const heart = document.createElement('div');
++        heart.className = 'bg-heart';
++        const isFloating = Math.random() > 0.42;
++        if (isFloating) heart.classList.add('floating');
++        const size = 14 + Math.random() * 48;
++        const left = Math.random() * 100;
++        const top = 4 + Math.random() * 84;
++        const opacity = 0.12 + Math.random() * 0.45;
++        const beatDuration = 1 + Math.random() * 0.45;
++        const floatDuration = 10 + Math.random() * 10;
++        const floatDelay = Math.random() * 5;
++        const beatDelay = Math.random() * 1.5;
++        const blur = isFloating ? (1.2 + Math.random() * 2.8).toFixed(2) : (Math.random() * 1.1).toFixed(2);
++        const color = colors[Math.floor(Math.random() * colors.length)];
++        heart.style.left = `${left}%`;
++        heart.style.top = `${top}%`;
++        heart.style.fontSize = `${size}px`;
++        heart.style.opacity = opacity;
++        heart.style.color = color;
++        heart.style.filter = `blur(${blur}px)`;
++        heart.style.setProperty('--beat', `${beatDuration}s`);
++        heart.style.setProperty('--floatDur', `${floatDuration}s`);
++        heart.style.setProperty('--scale', `${0.92 + Math.random() * 0.18}`);
++        heart.style.animationDelay = `${beatDelay}s${isFloating ? `, ${floatDelay}s` : ''}`;
++        heart.textContent = '❤';
++        heartBackground.appendChild(heart);
++    }
++    heartBackground.dataset.created = 'true';
++    heartbeatSyncTimer = setInterval(() => {
++        const hearts = heartBackground.querySelectorAll('.bg-heart');
++        hearts.forEach(h => h.classList.add('sync-pulse'));
++        setTimeout(() => hearts.forEach(h => h.classList.remove('sync-pulse')), 320);
++    }, 3000);
+ }
+*** End Patch
 function checkSurpriseAvailability() {
     surpriseBtn.disabled = false;
     surpriseBtn.classList.remove('disabled');
