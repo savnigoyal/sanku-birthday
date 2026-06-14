@@ -214,6 +214,7 @@ function revealImageAndText() {
 function startCelebrationSequence() {
     // Show cinematic overlay and enter glass-breaking scene
     surpriseBtn.disabled = true;
+    playBirthdayMusic();
     playPopSound();
     // prepare image to stay hidden until we shatter the glass
     const img = document.querySelector('.surprise-image-photo');
@@ -266,14 +267,31 @@ function initGlassScene() {
 
     // position hammer follower
     document.addEventListener('mousemove', onMouseMoveWhileGlass);
+    document.addEventListener('touchmove', onTouchMoveWhileGlass, { passive: true });
     hammerFollower.style.display = 'grid';
 
     // clear any prior cracks
     glassCtx.clearRect(0,0,glassCanvas.width, glassCanvas.height);
     drawGlassSurface();
 
-    // listen for clicks on the canvas to create cracks
+    // listen for clicks and touch taps on the canvas to create cracks
     glassCanvas.addEventListener('click', handleGlassClick);
+    glassCanvas.addEventListener('touchstart', handleGlassTouch, { passive: false });
+}
+
+function handleGlassTouch(event) {
+    event.preventDefault();
+    if (!glassCtx) return;
+    const touch = event.changedTouches[0];
+    const rect = glassCanvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    drawCrack(x, y);
+    playCrackSound();
+    crackCount++;
+    if (crackCount >= crackThreshold) {
+        setTimeout(() => shatterGlass(), 350);
+    }
 }
 
 function drawGlassSurface() {
@@ -297,6 +315,14 @@ function onMouseMoveWhileGlass(e) {
     if (!glassVisible) return;
     hammerFollower.style.left = (e.clientX) + 'px';
     hammerFollower.style.top = (e.clientY) + 'px';
+    hammerFollower.style.transform = 'translate(-50%,-50%) rotate(-18deg)';
+}
+
+function onTouchMoveWhileGlass(event) {
+    if (!glassVisible || event.touches.length === 0) return;
+    const touch = event.touches[0];
+    hammerFollower.style.left = (touch.clientX) + 'px';
+    hammerFollower.style.top = (touch.clientY) + 'px';
     hammerFollower.style.transform = 'translate(-50%,-50%) rotate(-18deg)';
 }
 

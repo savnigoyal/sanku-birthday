@@ -93,6 +93,7 @@ body::before {
     gap: 18px;
     backdrop-filter: blur(20px);
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 .hero-card::before {
@@ -396,28 +397,139 @@ body::before {
     }
 
     .surprise-image-frame {
-        min-height: 320px;
+        min-height: 280px;
+    }
+
+    .surprise-copy {
+        max-height: calc(72vh - 80px);
     }
 
     .surprise-copy-inner {
         padding: 18px 18px 18px;
     }
+
+    .countdown-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .hero-card {
+        padding: 20px 18px 22px;
+    }
+
+    .glass-instruction {
+        left: 50%;
+        top: 6%;
+        transform: translateX(-50%);
+        padding: 10px 14px;
+        font-size: 0.97rem;
+    }
+
+    .hammer-follower {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
 }
 
 @media (max-width: 560px) {
+    .hero-card {
+        padding: 18px 16px 20px;
+    }
+
     .surprise-modal {
-        padding: 18px;
-        min-height: 76vh;
+        padding: 16px;
+        min-height: 74vh;
     }
 
     .surprise-copy h2 {
-        font-size: 1.7rem;
+        font-size: 1.8rem;
     }
 
     .surprise-text-line {
-        font-size: 0.98rem;
+        font-size: 1.04rem;
+        line-height: 2.1;
+    }
+
+    .countdown-grid {
+        gap: 10px;
+    }
+
+    .count-box {
+        min-height: 84px;
+    }
+
+    .count-value {
+        font-size: 2.2rem;
+    }
+
+    .count-label {
+        font-size: 0.75rem;
+    }
+
+    .surprise-image-frame {
+        min-height: 250px;
+    }
+
+    .glass-instruction {
+        top: 5%;
+        font-size: 1rem;
+        padding: 10px 12px;
     }
 }
+
+@media (max-width: 420px) {
+    .screen {
+        width: min(100%, 100vw);
+        padding: 0 12px;
+    }
+
+    .title-label {
+        font-size: 1.45rem;
+    }
+
+    .hero-sub {
+        font-size: 1rem;
+    }
+
+    .primary-button {
+        padding: 16px 18px;
+        font-size: 1rem;
+    }
+
+    .surprise-modal {
+        min-height: 70vh;
+    }
+
+    .surprise-copy-inner {
+        padding: 16px 14px;
+    }
+
+    .surprise-copy h2 {
+        font-size: 1.9rem;
+    }
+
+    .surprise-text-line {
+        font-size: 1.08rem;
+        line-height: 2.2;
+    }
+
+    .count-box {
+        min-height: 78px;
+    }
+
+    .surprise-image-frame {
+        min-height: 220px;
+    }
+}
+
+.surprise-copy {
+    -webkit-overflow-scrolling: touch;
+}
+
+body, button, .primary-button, .glass-canvas {
+    touch-action: manipulation;
+}
+
 
 .floaters {
     inset: 0;
