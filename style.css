@@ -578,7 +578,7 @@ body::before {
 }
 
 .hammer-follower {
-    position: absolute; /* position inside the image frame */
+    position: fixed;
     width: 44px;
     height: 44px;
     display: grid;
