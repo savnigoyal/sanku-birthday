@@ -15,6 +15,7 @@ let musicPlayed = false;
 let birthdayAudioLoaded = false;
 let birthdayAudioFadeInterval = null;
 let birthdayReached = false;
+let birthdayIntroPlayed = false;
 
 const birthdaySong = [
     { freq: 264, duration: 0.4 },
@@ -134,6 +135,47 @@ function updateMusicButton() {
     }
 }
 
+function playBirthdayIntro() {
+    if (!window.speechSynthesis || birthdayIntroPlayed) {
+        playBirthdayMusic({ skipIntro: true });
+        return;
+    }
+
+    birthdayIntroPlayed = true;
+    const message = new SpeechSynthesisUtterance(
+        'Happy birthday, Sanku. I am so happy we can celebrate this moment together. Let the surprise glow, the music rise, and the celebration begin.'
+    );
+    message.rate = 1.0;
+    message.pitch = 1.1;
+    message.volume = 1;
+    message.onend = () => playBirthdayMusic({ skipIntro: true });
+    message.onerror = () => playBirthdayMusic({ skipIntro: true });
+    window.speechSynthesis.speak(message);
+}
+
+function playBirthdayMusic(options = {}) {
+    if (!birthdayAudio) return;
+    const { skipIntro = false } = options;
+    loadBirthdayAudio();
+    if (!skipIntro && !birthdayIntroPlayed && 'speechSynthesis' in window) {
+        playBirthdayIntro();
+        return;
+    }
+    if (birthdayAudio.paused) {
+        birthdayAudio.play().catch(() => {});
+    }
+    fadeAudioVolume(0.02, 0.68, 2400);
+    musicPlayed = true;
+    updateMusicButton();
+}
+
+function pauseBirthdayMusic() {
+    if (!birthdayAudio) return;
+    clearInterval(birthdayAudioFadeInterval);
+    birthdayAudio.pause();
+    updateMusicButton();
+}
+
 function createHappyBirthdayWav() {
     const sampleRate = 44100;
     const melody = [
@@ -143,20 +185,14 @@ function createHappyBirthdayWav() {
         [466, 0.4],[466, 0.4],[440, 0.8],[352, 0.8],[396, 0.8],[352, 1.6]
     ];
     const samples = [];
-    let time = 0;
-    const instrument = 'triangle';
-    const attack = 0.03;
-    const release = 0.08;
     melody.forEach(([freq, duration]) => {
         const frameCount = Math.floor(duration * sampleRate);
         for (let i = 0; i < frameCount; i++) {
             const t = i / sampleRate;
-            const envelope = Math.min(1, t / attack) * Math.max(0, 1 - (t / duration));
+            const envelope = Math.min(1, t / 0.03) * Math.max(0, 1 - (t / duration));
             const phase = 2 * Math.PI * freq * t;
-            const value = Math.sin(phase) * envelope * 0.35;
-            samples.push(value);
+            samples.push(Math.sin(phase) * envelope * 0.35);
         }
-        time += duration;
     });
     const buffer = new ArrayBuffer(44 + samples.length * 2);
     const view = new DataView(buffer);
