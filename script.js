@@ -7,9 +7,14 @@ const secsValue = document.getElementById("secsValue");
 const surpriseBtn = document.getElementById("surpriseBtn");
 const surpriseModal = document.getElementById("surpriseModal");
 const closeModalBtn = document.getElementById("closeModalBtn");
+const birthdayAudio = document.getElementById("birthdayMusic");
+const musicControlBtn = document.getElementById("musicControlBtn");
 
 let audioContext;
 let musicPlayed = false;
+let birthdayAudioLoaded = false;
+let birthdayAudioFadeInterval = null;
+let birthdayReached = false;
 
 const birthdaySong = [
     { freq: 264, duration: 0.4 },
@@ -56,21 +61,139 @@ function playNote(freq, startTime, duration) {
     osc.stop(startTime + duration);
 }
 
+function loadBirthdayAudio() {
+    if (birthdayAudioLoaded || !birthdayAudio) return;
+    const blob = createHappyBirthdayWav();
+    const url = URL.createObjectURL(blob);
+    birthdayAudio.src = url;
+    birthdayAudio.loop = true;
+    birthdayAudio.volume = 0;
+    birthdayAudioLoaded = true;
+}
+
 function playBirthdayMusic() {
-    if (musicPlayed) return;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-
-    audioContext = new AudioContext();
-    const startTime = audioContext.currentTime + 0.1;
-    let cursor = startTime;
-
-    birthdaySong.forEach(note => {
-        playNote(note.freq, cursor, note.duration);
-        cursor += note.duration;
-    });
-
+    if (!birthdayAudio) return;
+    loadBirthdayAudio();
+    if (birthdayAudio.paused) {
+        birthdayAudio.play().catch(() => {});
+    }
+    fadeAudioVolume(0.02, 0.68, 2400);
     musicPlayed = true;
+    updateMusicButton();
+}
+
+function pauseBirthdayMusic() {
+    if (!birthdayAudio) return;
+    clearInterval(birthdayAudioFadeInterval);
+    birthdayAudio.pause();
+    updateMusicButton();
+}
+
+function toggleBirthdayMusic() {
+    if (!birthdayAudio) return;
+    if (birthdayAudio.paused) {
+        playBirthdayMusic();
+    } else {
+        pauseBirthdayMusic();
+    }
+}
+
+function fadeAudioVolume(start, end, duration) {
+    if (!birthdayAudio) return;
+    clearInterval(birthdayAudioFadeInterval);
+    birthdayAudio.volume = start;
+    const stepTime = 60;
+    const steps = Math.max(1, Math.floor(duration / stepTime));
+    const volumeStep = (end - start) / steps;
+    let currentStep = 0;
+    birthdayAudioFadeInterval = setInterval(() => {
+        currentStep += 1;
+        birthdayAudio.volume = Math.min(1, Math.max(0, birthdayAudio.volume + volumeStep));
+        if (currentStep >= steps) {
+            clearInterval(birthdayAudioFadeInterval);
+        }
+    }, stepTime);
+}
+
+function updateMusicButton() {
+    if (!musicControlBtn || !birthdayAudio) return;
+    if (!birthdayAudioLoaded) {
+        musicControlBtn.textContent = '🔊 Play Music';
+        musicControlBtn.classList.remove('active');
+        musicControlBtn.setAttribute('aria-label', 'Play birthday music');
+        return;
+    }
+    if (birthdayAudio.paused) {
+        musicControlBtn.textContent = '🔊 Play Music';
+        musicControlBtn.classList.remove('active');
+        musicControlBtn.setAttribute('aria-label', 'Play birthday music');
+    } else {
+        musicControlBtn.textContent = '🔇 Pause Music';
+        musicControlBtn.classList.add('active');
+        musicControlBtn.setAttribute('aria-label', 'Pause birthday music');
+    }
+}
+
+function createHappyBirthdayWav() {
+    const sampleRate = 44100;
+    const melody = [
+        [264, 0.4],[264, 0.4],[297, 0.8],[264, 0.8],[352, 0.8],[330, 1.6],
+        [264, 0.4],[264, 0.4],[297, 0.8],[264, 0.8],[396, 0.8],[352, 1.6],
+        [264, 0.4],[264, 0.4],[528, 0.8],[440, 0.8],[352, 0.8],[330, 0.8],[297, 1.6],
+        [466, 0.4],[466, 0.4],[440, 0.8],[352, 0.8],[396, 0.8],[352, 1.6]
+    ];
+    const samples = [];
+    let time = 0;
+    const instrument = 'triangle';
+    const attack = 0.03;
+    const release = 0.08;
+    melody.forEach(([freq, duration]) => {
+        const frameCount = Math.floor(duration * sampleRate);
+        for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const envelope = Math.min(1, t / attack) * Math.max(0, 1 - (t / duration));
+            const phase = 2 * Math.PI * freq * t;
+            const value = Math.sin(phase) * envelope * 0.35;
+            samples.push(value);
+        }
+        time += duration;
+    });
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+    let offset = 44;
+    samples.forEach(s => {
+        const clamped = Math.max(-1, Math.min(1, s));
+        view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF, true);
+        offset += 2;
+    });
+    return new Blob([view], { type: 'audio/wav' });
+}
+
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
+}
+
+function triggerBirthdayMusicIfNeeded() {
+    if (!birthdayReached && Date.now() >= birthday) {
+        birthdayReached = true;
+        playPopSound();
+        playBirthdayMusic();
+    }
 }
 
 function tryAutoplayMusic() {
@@ -84,6 +207,13 @@ function tryAutoplayMusic() {
 document.body.addEventListener('click', () => {
     playBirthdayMusic();
 }, { once: true });
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (musicControlBtn) {
+        musicControlBtn.addEventListener('click', toggleBirthdayMusic);
+    }
+    updateMusicButton();
+});
 
 function showSurprise() {
     surpriseModal.classList.remove('hidden');
@@ -483,6 +613,7 @@ window.addEventListener('click', event => {
 window.addEventListener('load', () => {
     tryAutoplayMusic();
     checkSurpriseAvailability();
+    triggerBirthdayMusicIfNeeded();
 });
 
 function updateCountdown() {

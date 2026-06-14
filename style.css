@@ -55,6 +55,29 @@ body::before {
     backdrop-filter: blur(18px);
 }
 
+.music-control {
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    padding: 12px 14px;
+    border-radius: 999px;
+    box-shadow: 0 14px 30px rgba(255, 92, 140, 0.18);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.music-control:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.music-control.active {
+    background: linear-gradient(135deg, #ff7caa, #ff4373);
+    box-shadow: 0 18px 36px rgba(255, 92, 140, 0.28);
+}
+
 .top-icon {
     width: 42px;
     height: 42px;
