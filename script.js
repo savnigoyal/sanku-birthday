@@ -297,10 +297,10 @@ function initGlassScene() {
         glassCanvas.style.top = '0px';
         glassCanvas.style.width = rect.width + 'px';
         glassCanvas.style.height = rect.height + 'px';
-        // initialize hammer in center of frame so it doesn't appear stuck top-left (relative coords)
+        // initialize hammer in the viewport center of the frame
         if (hammerFollower) {
-            hammerFollower.style.left = (rect.width / 2) + 'px';
-            hammerFollower.style.top = (rect.height / 2) + 'px';
+            hammerFollower.style.left = (rect.left + rect.width / 2) + 'px';
+            hammerFollower.style.top = (rect.top + rect.height / 2) + 'px';
         }
     }
     resizeCanvas();
@@ -340,15 +340,9 @@ function drawGlassSurface() {
 }
 
 function onMouseMoveWhileGlass(e) {
-    if (!glassVisible || !glassFrame) return;
-    const rect = glassFrame.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    // clamp inside frame bounds
-    const cx = Math.max(0, Math.min(rect.width, x));
-    const cy = Math.max(0, Math.min(rect.height, y));
-    hammerFollower.style.left = (cx) + 'px';
-    hammerFollower.style.top = (cy) + 'px';
+    if (!glassVisible) return;
+    hammerFollower.style.left = e.clientX + 'px';
+    hammerFollower.style.top = e.clientY + 'px';
     hammerFollower.style.transform = 'translate(-50%,-50%) rotate(-18deg)';
 }
 
