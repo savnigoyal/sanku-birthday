@@ -247,57 +247,6 @@ body::before {
     background: radial-gradient(circle at 50% 20%, rgba(255, 128, 166, 0.11), transparent 18%),
                 radial-gradient(circle at 15% 15%, rgba(255, 245, 255, 0.08), transparent 15%);
     opacity: 0.95;
-    z-index: 2;
-}
-
-.heart-background {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    overflow: hidden;
-}
-
-.bg-heart {
-    position: absolute;
-    display: grid;
-    place-items: center;
-    font-family: 'Inter', system-ui, sans-serif;
-    color: #ff617e;
-    opacity: 0.42;
-    text-shadow: 0 0 18px rgba(255, 103, 138, 0.45), 0 0 34px rgba(255, 120, 155, 0.18);
-    will-change: transform, opacity, filter;
-    animation: heartBeat var(--beat, 1.2s) ease-in-out infinite;
-    transform-origin: center center;
-}
-
-.bg-heart.floating {
-    animation: heartBeat var(--beat, 1.2s) ease-in-out infinite,
-               heartFloat var(--floatDur, 11s) linear infinite;
-}
-
-.bg-heart.sync-pulse {
-    animation: heartBeat var(--beat, 1.2s) ease-in-out infinite,
-               heartFloat var(--floatDur, 11s) linear infinite,
-               heartSync 0.28s ease-in-out 1;
-}
-
-@keyframes heartBeat {
-    0%, 100% { transform: scale(1); }
-    30% { transform: scale(1.08); }
-    60% { transform: scale(0.98); }
-}
-
-@keyframes heartFloat {
-    0% { transform: translateY(0) scale(var(--scale, 1)); }
-    50% { transform: translateY(-18px) scale(var(--scale, 1)); }
-    100% { transform: translateY(0) scale(var(--scale, 1)); }
-}
-
-@keyframes heartSync {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.22); }
-    100% { transform: scale(1); }
 }
 
 .surprise-scene {
@@ -307,7 +256,6 @@ body::before {
     gap: 26px;
     align-items: center;
     min-height: 100%;
-    z-index: 3;
 }
 
 .surprise-image-frame {
@@ -630,14 +578,14 @@ body::before {
 }
 
 .hammer-follower {
-    position: fixed; /* follow the viewport cursor exactly */
+    position: absolute; /* position inside the image frame */
     width: 44px;
     height: 44px;
     display: grid;
     place-items: center;
     font-size: 1.4rem;
     pointer-events: none;
-    z-index: 90;
+    z-index: 80;
     transform: translate(-50%, -50%) scale(1);
     transition: transform 0.08s ease;
     display: none;
