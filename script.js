@@ -962,7 +962,13 @@ function buildGenericContent(item) {
 }
 
 function handleSurpriseCardClick(event) {
-    const card = event.target.closest('.surprise-card');
+    let card = event.target;
+    if (card && card.nodeType !== Node.ELEMENT_NODE) {
+        card = card.parentElement;
+    }
+    while (card && !card.classList?.contains('surprise-card')) {
+        card = card.parentElement;
+    }
     if (!card || !card.dataset.surpriseKey) return;
     const item = surpriseSchedule.find(entry => entry.key === card.dataset.surpriseKey);
     if (!item) return;
