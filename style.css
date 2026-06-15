@@ -932,6 +932,10 @@ body, button, .primary-button, .glass-canvas {
     align-content: space-between;
 }
 
+.surprise-card:hover {
+    z-index: 2;
+}
+
 .surprise-card::before {
     content: '';
     position: absolute;
