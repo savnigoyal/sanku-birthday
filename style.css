@@ -25,10 +25,16 @@ body {
     justify-content: center;
     padding: 12px 0 18px;
     overflow-x: hidden;
+    line-height: 1.55;
+    letter-spacing: 0.005em;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 body::before {
     content: '';
+
     position: fixed;
     inset: 0;
     background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.14), transparent 16%),
@@ -235,7 +241,8 @@ body::before {
 .surprise-modal {
     width: min(100%, 960px);
     max-width: 980px;
-    min-height: 80vh;
+    max-height: 92vh;
+    min-height: 60vh;
     background: rgba(12, 6, 12, 0.94);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 32px;
@@ -243,9 +250,12 @@ body::before {
     box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(28px);
     position: relative;
-    overflow: hidden;
+    overflow: auto;
     animation: modalPop 0.45s ease;
 }
+
+.surprise-modal.animating { pointer-events: none; }
+.surprise-modal.animating .jar-inner { pointer-events: none; }
 
 .modal-close {
     position: absolute;
@@ -353,7 +363,14 @@ body::before {
     gap: 18px;
     font-family: 'Playfair Display', serif;
     color: #ffeef2;
+    line-height: 1.65;
+    letter-spacing: 0.01em;
+    font-feature-settings: "kern" 1, "liga" 1, "clig" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
+
 
 .surprise-copy h2,
 .surprise-copy h2 + .surprise-text {
@@ -373,18 +390,21 @@ body::before {
 
 .surprise-text {
     display: grid;
-    gap: 12px;
+    gap: 10px;
+    padding-right: 2px;
 }
+
 
 .surprise-text-line {
     margin: 0;
     color: rgba(255, 234, 243, 0.98);
     font-size: 1.06rem;
-    line-height: 1.95;
+    line-height: 1.75;
     opacity: 0;
     transform: translateY(10px);
     animation: fadeLine 0.55s ease forwards;
 }
+
 
 .surprise-text-line:nth-child(1) { animation-delay: 0.65s; }
 .surprise-text-line:nth-child(2) { animation-delay: 0.95s; }
@@ -698,6 +718,8 @@ body, button, .primary-button, .glass-canvas {
     z-index: 70;
     pointer-events: auto;
     cursor: none; /* we use hammer follower */
+    display: none;
+    background: transparent; /* ensure canvas is transparent unless drawn */
 }
 
 .jar-stage {
@@ -799,6 +821,392 @@ body, button, .primary-button, .glass-canvas {
     font-size: 1.05rem;
 }
 
+/* ---- Love Jar redesign ---- */
+.love-jar-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+    padding: 6px 14px 22px;
+    margin-top: 6px; /* small gap so jar doesn't touch header */
+}
+.love-jar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    margin: 0;
+    color: #fff8f9;
+    text-shadow: 0 18px 36px rgba(0,0,0,0.5);
+}
+.love-jar-sub {
+    font-size: 0.95rem;
+    color: rgba(255,235,240,0.9);
+    opacity: 0.95;
+}
+.love-jar-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 18px 8px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(30,6,12,0.6));
+    border-radius: 20px;
+}
+.love-jar {
+    width: min(420px, 86%);
+    max-width: 560px;
+    aspect-ratio: 10/12;
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+.jar-decor.hearts::before {
+    content: '❤️';
+    position: absolute;
+    left: 8%;
+    top: 6%;
+    font-size: 1.8rem;
+    color: rgba(255,100,140,0.85);
+    animation: floatSmall 6s ease-in-out infinite;
+    opacity: 0.9;
+}
+.jar-decor.sparkles::after {
+    content: '✨';
+    position: absolute;
+    right: 12%;
+    top: 10%;
+    font-size: 1.4rem;
+    color: rgba(255,245,220,0.95);
+    animation: twinkle 4s linear infinite;
+}
+
+.jar-glass {
+    width: 92%;
+    height: 94%;
+    /* mason-jar silhouette: smoother, rounded glass */
+    border-radius: 26% 26% 14% 14% / 26% 26% 10% 10%;
+
+    /* dark maroon/black scene glass */
+    background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(120, 10, 35, 0.10) 45%, rgba(0,0,0,0.10));
+    border: 1px solid rgba(255, 245, 255, 0.20);
+
+    /* realistic shadow + soft inner glow */
+    box-shadow:
+        0 44px 110px rgba(0,0,0,0.68),
+        inset 0 -22px 54px rgba(0,0,0,0.48),
+        inset 0 0 32px rgba(255,255,255,0.08);
+
+    /* real glass feel */
+    position: relative;
+    overflow: visible;
+    display: block;
+    opacity: 0.78;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.jar-glass::before {
+    /* main top highlight */
+    content: '';
+    position: absolute;
+    left: 12%;
+    top: 4%;
+    width: 30%;
+    height: 22%;
+    border-radius: 60% 60% 10% 10% / 100% 100% 6% 6%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.06));
+    filter: blur(8px) saturate(120%);
+    opacity: 0.92;
+    pointer-events: none;
+    transform: rotate(-8deg);
+}
+.jar-glass::after {
+    /* glass thickness + inner shadow */
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow:
+        inset 0 10px 28px rgba(0,0,0,0.45), /* inner shadow */
+        0 18px 40px rgba(0,0,0,0.55); /* outer shadow */
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    pointer-events: none;
+}
+
+/* left/right glossy edge streaks to simulate glass thickness */
+.jar-glass .edge-left, .jar-glass .edge-right { display: none; }
+.jar-glass:before, .jar-glass:after { mix-blend-mode: screen; }
+.jar-glass::after { mix-blend-mode: overlay; }
+
+/* add subtle reflection streak */
+.jar-glass .reflect { position: absolute; left: 76%; top: 8%; width: 6px; height: 66%; background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.06)); filter: blur(6px); opacity: 0.12; transform: rotate(6deg); pointer-events: none; }
+
+/* shadow under jar */
+.jar-shadow {
+    position: absolute;
+    left: 50%;
+    bottom: -8%;
+    width: 66%;
+    height: 40px;
+    transform: translateX(-50%);
+
+    /* more realistic bottom shadow */
+    background:
+        radial-gradient(ellipse at center,
+            rgba(0,0,0,0.75) 0%,
+            rgba(0,0,0,0.38) 38%,
+            rgba(0,0,0,0.14) 62%,
+            rgba(0,0,0,0) 74%);
+    filter: blur(14px);
+    z-index: -1;
+}
+
+.jar-inner {
+    position: absolute;
+    left: 6%;
+    top: 22%;          /* moved upward so notes use full jar */
+    width: 88%;
+    height: 70%;
+    border-radius: 24px;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.jar-neck { position: absolute; left: 0; right: 0; top: 4%; pointer-events: none; display: block; height: 22%; }
+.jar-twine {
+    position: absolute;
+    left: 50%;
+    top: 4%;
+    transform: translateX(-50%);
+    width: 62%;
+    height: 36px;
+    border-radius: 20px;
+    background: repeating-linear-gradient(90deg, #c8a785 0 6px, #d7b991 6px 12px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    opacity: 0.98;
+}
+.jar-twine .knot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    transform: translate(-50%,-50%);
+    background: radial-gradient(circle at 30% 30%, #b78663, #d4b293);
+    border-radius: 50%;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.35) inset;
+}
+.jar-hang { position: absolute; left: 50%; top: 2%; transform: translateX(-50%); width: 120%; display:flex; align-items:flex-start; justify-content:center; pointer-events: none; }
+.hang-string { width: 2px; height: 44px; background: linear-gradient(180deg, rgba(180,120,80,0.95), rgba(215,170,120,0.9)); border-radius: 2px; box-shadow: 0 6px 12px rgba(0,0,0,0.35); transform: translateY(6px); }
+.jar-label {
+    pointer-events: auto;
+    position: relative;
+    margin-top: 44px;
+
+    /* bright pink center label */
+    background: linear-gradient(180deg, #ff3aa0 0%, #ff4fb7 45%, #ff2f8d 100%);
+    border-radius: 14px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.28);
+    box-shadow:
+        0 18px 40px rgba(255, 60, 154, 0.28),
+        0 26px 70px rgba(0,0,0,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.jar-label .label-text {
+    font-family: 'Great Vibes', cursive;
+    color: #ffeaf7;
+    font-size: 1.1rem;
+    display:block;
+    text-shadow:
+        0 2px 0 rgba(0,0,0,0.20),
+        0 0 18px rgba(255, 255, 255, 0.22);
+}
+
+
+/* lid */
+.jar-lid { position: absolute; left: 50%; transform: translateX(-50%); top: -6%; width: 62%; height: 36px; z-index: 40; pointer-events: none; }
+.jar-lid .lid-top { width: 100%; height: 100%; border-radius: 8px; background: linear-gradient(180deg, #d9b76a, #b8842f); box-shadow: 0 6px 18px rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; }
+.jar-lid .lid-heart { font-size: 0.92rem; color: rgba(255,230,230,0.95); text-shadow: 0 2px 6px rgba(0,0,0,0.35); opacity: 0.9; }
+
+/* shimmer animation for reflections */
+@keyframes glassShimmer {
+    0% { opacity: 0.08; transform: translateY(-6px) skewY(-3deg); }
+    50% { opacity: 0.22; transform: translateY(2px) skewY(1deg); }
+    100% { opacity: 0.08; transform: translateY(-6px) skewY(-3deg); }
+}
+.jar-glass::before { animation: glassShimmer 6s ease-in-out infinite; }
+.jar-glass .reflect { animation: glassShimmer 8s ease-in-out infinite; }
+
+/* tiny occasional sparkle */
+@keyframes tinySparkle { 0% { opacity: 0; transform: scale(0.9);} 40% { opacity: 1; transform: scale(1.08);} 100% { opacity: 0; transform: scale(0.9);} }
+.jar-decor.sparkles::after { animation: tinySparkle 5.8s linear infinite; }
+
+
+.roll {
+    position: absolute;
+    /* base size (JS overrides with randomized width/height; this is the default) */
+    width: 190px;
+    height: 84px;
+    border-radius: 42px;
+
+    /* cream paper texture + subtle grain */
+    background:
+        /* fibers / grain */
+        repeating-linear-gradient(90deg,
+            rgba(90, 45, 20, 0.035) 0 2px,
+            rgba(255,255,255,0.00) 2px 7px),
+        repeating-linear-gradient(0deg,
+            rgba(90, 45, 20, 0.020) 0 1px,
+            rgba(255,255,255,0.00) 1px 5px),
+        /* gentle vignette */
+        radial-gradient(circle at 50% 10%, rgba(255,255,255,0.42), rgba(255,255,255,0.05) 45%, rgba(0,0,0,0.05) 100%),
+        /* paper highlight + depth */
+        linear-gradient(180deg, rgba(255,255,255,0.68), rgba(255,255,255,0.20) 40%, rgba(0,0,0,0.04)),
+        /* base cream */
+        linear-gradient(90deg, #fff2d6 0%, #f7e7c4 48%, #efd7a6 100%);
+
+    /* soft inner glow + depth */
+    box-shadow:
+        0 22px 44px rgba(0,0,0,0.52),
+        inset 0 1px 0 rgba(255,255,255,0.75),
+        inset 0 -18px 38px rgba(0,0,0,0.08),
+        inset 0 0 28px rgba(255, 198, 120, 0.24);
+
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transform-origin: 50% 50%;
+    transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms ease, opacity 300ms ease;
+    will-change: transform, opacity;
+    user-select: none;
+}
+
+
+.roll::before,
+.roll::after {
+    content: '';
+    position: absolute;
+    /* keep rolled edges visible on bigger rolls */
+    width: 16px;
+    height: 36px;
+    background: linear-gradient(180deg, #e7d7b6, #d3bf98);
+    border-radius: 5px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.62);
+    filter: saturate(1.05);
+}
+.roll::before { left: 7px; transform: rotate(-14deg); top: 2px; }
+.roll::after { right: 7px; transform: rotate(12deg); top: 2px; }
+.roll .paper-edge {
+    position: absolute;
+    left: 7px;
+    width: 13px;
+    height: 26px;
+    background: linear-gradient(180deg, #f0dcbf, #e6ceaa);
+    border-radius: 4px;
+    transform: rotate(-8deg);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.52);
+}
+.roll .paper-core {
+    font-weight: 1000;
+    color: #22070f;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.85rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+
+    /* sharper, bold, readable */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision;
+    text-shadow:
+        0 1px 0 rgba(255,255,255,0.28),
+        0 2px 8px rgba(0,0,0,0.18);
+
+    background: rgba(255, 246, 230, 0.78);
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 7, 15, 0.15);
+    box-shadow:
+        0 12px 22px rgba(0,0,0,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.65);
+}
+
+.roll .ribbon {
+    position: absolute;
+    right: 7px;
+    width: 32px;
+    height: 14px;
+    background: linear-gradient(90deg, #ff3b6f, #c81b3a);
+    border-radius: 7px;
+    box-shadow: 0 8px 14px rgba(200,20,60,0.18);
+    opacity: 0.98;
+}
+
+.roll:hover {
+    /* Prevent any visual overlap by removing scale/rotation on hover.
+       Keep only a tiny lift and shadow change. */
+    transform: translateY(-4px);
+    box-shadow:
+        0 22px 44px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.75);
+}
+
+.roll.roll-hover { transform: translateY(-5px); }
+
+.roll.opened { opacity: 0.45; pointer-events: none; transform: scale(0.98) rotate(6deg); }
+
+.roll-clone {
+    border-radius: 18px;
+    pointer-events: none;
+}
+.roll.untie .ribbon { transform: translateX(12px) rotate(6deg) scaleX(0.85); opacity: 0.0; transition: transform 420ms ease, opacity 420ms ease; }
+.roll-clone.untie .ribbon { transform: translateX(18px) rotate(12deg) scaleX(0.6); opacity: 0; }
+
+.unrolled-paper {
+    width: 100%;
+    min-height: 120px;
+    background: linear-gradient(180deg, #fff8ed, #f6eedf);
+    border-radius: 12px;
+    padding: 18px;
+    color: #2b1310;
+    box-shadow: 0 20px 48px rgba(0,0,0,0.45);
+    border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* animations */
+@keyframes wiggle {
+    0% { transform: translate(-50%, -50%) rotate(-2deg); }
+    50% { transform: translate(-50%, -48%) rotate(2deg); }
+    100% { transform: translate(-50%, -50%) rotate(-2deg); }
+}
+@keyframes floatSmall {
+    0% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-6px) scale(1.02); }
+    100% { transform: translateY(0) scale(1); }
+}
+@keyframes twinkle {
+    0% { opacity: 0.6; transform: scale(0.98); }
+    50% { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 0.6; transform: scale(0.98); }
+}
+
+.roll { animation: none; }
+.roll:hover { animation-play-state: paused; }
+
+
+/* popup tweaks */
+.jar-note-popup-card { text-align: left; }
+.jar-note-title { font-weight: 700; margin-bottom: 8px; color: #6b0b20; }
+.unrolled-text { white-space: pre-wrap; font-size: 1rem; line-height: 1.6; }
+
+/* responsive */
+@media (max-width: 860px) {
+    .love-jar { width: 92%; aspect-ratio: 10/12; }
+    .roll { width: 90px; height: 40px; }
+}
+
+
 .jar-note-title {
     margin: 0 0 12px;
     font-family: 'Playfair Display', serif;
@@ -865,8 +1273,6 @@ body, button, .primary-button, .glass-canvas {
     color: rgba(255, 227, 236, 0.75);
 }
 
-}
-
 .open-surprises-section {
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -914,25 +1320,26 @@ body, button, .primary-button, .glass-canvas {
     z-index: 1;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 20px;
 }
 
 .surprise-card {
     position: relative;
     z-index: 1;
-    min-height: 130px;
-    padding: 20px 18px;
+    min-height: 148px;
+    padding: 22px 18px;
     border-radius: 28px;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 18px 44px rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 200, 220, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 16px 38px rgba(0, 0, 0, 0.18);
     overflow: hidden;
     color: #fff;
     cursor: pointer !important;
     pointer-events: auto;
     transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
-    display: grid;
-    align-content: space-between;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .surprise-card:hover {
@@ -948,25 +1355,31 @@ body, button, .primary-button, .glass-canvas {
 .surprise-card::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at top left, rgba(255, 84, 127, 0.18), transparent 24%),
+    inset: -1px;
+    background: radial-gradient(circle at top left, rgba(255, 84, 127, 0.20), transparent 24%),
                 radial-gradient(circle at bottom right, rgba(255, 39, 95, 0.14), transparent 26%);
     pointer-events: none;
 }
 
 .surprise-card.active {
     background: linear-gradient(180deg, rgba(255, 19, 92, 0.12), rgba(33, 0, 0, 0.35));
-    border-color: rgba(255, 54, 115, 0.64);
-    box-shadow: 0 18px 40px rgba(255, 42, 107, 0.2), inset 0 0 0 1px rgba(255, 103, 149, 0.18);
+    border-color: rgba(255, 120, 170, 0.72);
+    box-shadow:
+        0 18px 42px rgba(255, 42, 107, 0.22),
+        0 0 0 1px rgba(255, 120, 170, 0.18),
+        0 0 26px rgba(255, 110, 160, 0.12);
 }
 
 .surprise-card.active:hover {
     transform: translateY(-4px);
-    box-shadow: 0 24px 48px rgba(255, 42, 107, 0.26), inset 0 0 0 1px rgba(255, 103, 149, 0.22);
+    box-shadow:
+        0 24px 52px rgba(255, 42, 107, 0.28),
+        0 0 0 1px rgba(255, 120, 170, 0.22),
+        0 0 32px rgba(255, 110, 160, 0.16);
 }
 
 .surprise-card.locked {
-    filter: grayscale(0.48) blur(0.2px);
+    filter: grayscale(0.45) blur(0.15px);
     opacity: 0.62;
     cursor: default;
 }
@@ -977,33 +1390,64 @@ body, button, .primary-button, .glass-canvas {
 
 .surprise-card .card-top {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
-    gap: 10px;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
 }
 
 .surprise-card .card-date {
     font-family: 'Playfair Display', serif;
-    font-size: 1.28rem;
+    font-size: 1.15rem; /* ~18-22px */
     font-weight: 700;
+    line-height: 1.15;
+    color: rgba(255, 255, 255, 0.98);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 68%;
 }
 
+/* Remove the extra numbering ("1" and "2") from the date cards */
+.surprise-card .card-date::before,
+.surprise-card .card-date::after {
+    content: none !important;
+}
+
+
 .surprise-card .card-status {
-    font-size: 0.88rem;
-    letter-spacing: 0.08em;
+    font-size: 0.95rem; /* ~14-18px */
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    line-height: 1.1;
     text-transform: uppercase;
     color: #ffccd7;
+    white-space: nowrap;
+    text-align: right;
 }
 
 .surprise-card .card-footer {
+    position: relative;
+    z-index: 1;
     display: grid;
-    gap: 8px;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: end;
+    margin-top: 12px;
 }
 
 .surprise-card .card-note {
-    color: rgba(255, 236, 242, 0.85);
-    font-size: 0.95rem;
-    line-height: 1.6;
+    margin: 0;
+    color: rgba(255, 236, 242, 0.86);
+    font-size: 0.95rem; /* ~14-16px */
+    line-height: 1.45;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-wrap: pretty;
+    word-break: normal;
 }
 
 .surprise-card.locked .card-note {
@@ -1011,14 +1455,23 @@ body, button, .primary-button, .glass-canvas {
 }
 
 .surprise-card .card-icon {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    align-self: center;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .surprise-card.final-card {
     grid-column: span 3;
-    min-height: 150px;
+    min-height: 160px;
     background: linear-gradient(180deg, rgba(255, 210, 120, 0.16), rgba(35, 0, 0, 0.48));
-    border-color: rgba(255, 186, 81, 0.8);
+    border-color: rgba(255, 186, 81, 0.82);
 }
 
 .surprise-card.final-card.active {
@@ -1033,23 +1486,36 @@ body, button, .primary-button, .glass-canvas {
     color: #ffd8a8;
 }
 
+
+
 .open-surprise-panel {
     width: min(100%, 880px);
     max-width: 920px;
+    max-height: calc(100vh - 32px);
+    height: auto;
     background: rgba(12, 6, 12, 0.96);
+
     border-radius: 32px;
     border: 1px solid rgba(255,255,255,0.14);
     padding: 26px;
     box-shadow: 0 42px 110px rgba(0,0,0,0.48);
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
+
+#openSurpriseModal {
+    place-items: center;
+}
+
 
 .open-surprise-header {
     display: flex;
     align-items: center;
     gap: 16px;
     margin-bottom: 22px;
+    position: relative;
+    z-index: 30; /* ensure header sits above decorative jar elements */
 }
 
 .open-surprise-icon {
@@ -1131,16 +1597,28 @@ body, button, .primary-button, .glass-canvas {
 @media (max-width: 840px) {
     .surprise-cards-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
     }
 }
 
 @media (max-width: 640px) {
     .surprise-cards-grid {
         grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .surprise-card {
+        min-height: 156px;
+        padding: 20px 16px;
     }
 
     .surprise-card.final-card {
         grid-column: span 1;
+    }
+
+    .surprise-card .card-date {
+        max-width: 62%;
+        font-size: 1.12rem;
     }
 }
 
@@ -1160,9 +1638,6 @@ body, button, .primary-button, .glass-canvas {
     }
 }
 
-    display: none;
-    background: transparent; /* ensure canvas is transparent unless drawn */
-}
 
 .glass-instruction {
     position: absolute;

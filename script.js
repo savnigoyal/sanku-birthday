@@ -281,6 +281,12 @@ const confettiCanvas = document.getElementById('confettiCanvas');
 const floatingEmojisContainer = document.getElementById('floatingEmojis');
 let confettiRAF = null;
 
+// DEBUG: force-unlock specific surprises for preview (remove or clear when done)
+const FORCE_UNLOCKED_KEYS = [
+    // add surprise keys here to force them unlocked for preview
+    '2026-06-16'
+];
+
 function playPopSound() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -813,6 +819,7 @@ function getTodayMidnight() {
 }
 
 function isCardUnlocked(dateKey) {
+    if (Array.isArray(FORCE_UNLOCKED_KEYS) && FORCE_UNLOCKED_KEYS.includes(dateKey)) return true;
     return getTodayMidnight() >= parseLocalMidnight(dateKey);
 }
 
@@ -872,6 +879,15 @@ function openSurprise(key) {
         openSurpriseContent.innerHTML = buildJarContent(item);
         attachJarInteractions(item);
         openSurpriseModal.classList.remove('hidden');
+        // ensure modal is scrolled to top and focus first roll for accessibility
+        try {
+            openSurpriseModal.scrollTop = 0;
+            openSurpriseModal.querySelector('.open-surprise-panel')?.scrollTo({ top: 0 });
+        } catch (e) {}
+        setTimeout(() => {
+            const firstRoll = openSurpriseContent.querySelector('.roll');
+            firstRoll?.focus();
+        }, 120);
     } else if (item.type === 'final') {
         openSurpriseContent.innerHTML = buildFinalContent(item);
         openSurpriseModal.classList.remove('hidden');
@@ -885,55 +901,284 @@ function openSurprise(key) {
 }
 
 function buildJarContent(item) {
+    // Love Jar markup: jar shell + dynamic rolls container + unroll stage
     return `
-        <div class="jar-stage">
-            <div class="jar-shell" aria-hidden="true"></div>
-            <div class="jar-notes-grid">
-                ${item.notes.map((note, index) => `
-                    <button class="jar-note" type="button" data-note-index="${index}">
-                        <span>Roll ${index + 1}</span>
-                    </button>
-                `).join('')}
+        <div class="love-jar-stage">
+            <h2 class="love-jar-title">20 Reasons Why I Love You ❤️</h2>
+            <div class="love-jar-sub">Click a paper roll from the jar to reveal a reason.</div>
+            <div class="love-jar-wrap">
+                <div class="jar-decor hearts" aria-hidden="true"></div>
+                <div class="jar-decor sparkles" aria-hidden="true"></div>
+                <div class="love-jar" role="region" aria-label="Love jar">
+                        <div class="jar-lid" aria-hidden="true">
+                            <div class="lid-top"><span class="lid-heart">❤</span></div>
+                        </div>
+                        <div class="jar-hang">
+                            <div class="hang-string"></div>
+                            <div class="jar-label"><span class="label-text">20 Reasons Why I Love You ❤️</span></div>
+                        </div>
+                        <div class="jar-glass">
+                            <div class="reflect" aria-hidden="true"></div>
+                            <div class="jar-inner" id="jarInner">
+                            ${item.notes.map((note, index) => `
+                                <div class="roll" data-note-index="${index}" aria-label="Roll ${index + 1}" tabindex="0">
+                                    <div class="paper-edge"></div>
+                                    <div class="paper-core">${index + 1}</div>
+                                    <div class="ribbon" aria-hidden="true"></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="jar-shadow" aria-hidden="true"></div>
+                </div>
+            </div>
+            <div class="jar-note-popup hidden" id="jarNotePopup" aria-hidden="true">
+                <div class="jar-note-popup-card">
+                    <button class="jar-note-close" type="button" aria-label="Close note">✕</button>
+                    <div class="jar-note-title">Note</div>
+                    <div class="unrolled-paper" id="unrolledPaper">
+                        <div class="unrolled-text"></div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="jar-note-popup hidden" id="jarNotePopup" aria-hidden="true">
-            <div class="jar-note-popup-card">
-                <button class="jar-note-close" type="button" aria-label="Close note">✕</button>
-                <div class="jar-note-title">Note</div>
-                <p class="jar-note-text"></p>
-            </div>
-        </div>
-        <p>Click a paper roll to pull out a note. Once opened, that roll will stay softly faded in the jar.</p>
     `;
 }
 
 function attachJarInteractions(item) {
-    const noteButtons = openSurpriseContent.querySelectorAll('.jar-note');
+    const jarInner = openSurpriseContent.querySelector('#jarInner');
+    const rolls = jarInner?.querySelectorAll('.roll') || [];
     const popup = openSurpriseContent.querySelector('#jarNotePopup');
-    const popupText = openSurpriseContent.querySelector('.jar-note-text');
+    const popupText = openSurpriseContent.querySelector('.unrolled-text');
     const popupTitle = openSurpriseContent.querySelector('.jar-note-title');
     const closeButton = openSurpriseContent.querySelector('.jar-note-close');
-    noteButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const index = Number(btn.dataset.noteIndex);
-            const noteText = item.notes[index];
-            popupTitle.textContent = `Reason ${index + 1}`;
-            popupText.textContent = noteText;
-            popup.classList.remove('hidden');
-            popup.setAttribute('aria-hidden', 'false');
-            btn.classList.add('opened');
+
+    // place rolls inside the jar with strong separation (no overlap) with a grid fallback
+    const placedRects = [];
+    const jarW = jarInner.clientWidth;
+    const jarH = jarInner.clientHeight;
+
+function rectsOverlap(r1, r2, padding = 18) {
+        // padding is intentionally large to prevent even visual overlap
+        // when rolls scale/rotate on hover and while animating.
+        return !(
+            r1.x + r1.w + padding < r2.x ||
+            r2.x + r2.w + padding < r1.x ||
+            r1.y + r1.h + padding < r2.y ||
+            r2.y + r2.h + padding < r1.y
+        );
+    }
+
+    // If jar is too small to place all rolls without overlap (depending on randomized sizes),
+    // fall back to a deterministic grid layout.
+    const planned = [];
+    rolls.forEach((roll, i) => {
+        const baseW = 66;
+        const baseH = 26;
+
+        const maxW = Math.max(72, Math.floor(jarW * 0.20));
+        const maxH = Math.max(26, Math.floor(jarH * 0.12));
+
+        const randW = Math.round(baseW + Math.random() * 62);
+        const randH = Math.round(baseH + Math.random() * 32);
+        const width = Math.min(randW, maxW);
+        const height = Math.min(randH, maxH);
+
+        roll.style.width = width + 'px';
+        roll.style.height = height + 'px';
+
+        planned.push({ roll, index: i, width, height });
+    });
+
+    function tryPlaceRandom({ width, height }, idx) {
+        const padding = 10;
+        const minY = 8;
+        const minX = 6;
+        const maxX = 94;
+        const maxY = 94;
+
+        const xPercent = minX + Math.random() * (maxX - minX);
+        const yPercent = minY + Math.random() * (maxY - minY);
+
+        const cx = Math.floor((xPercent / 100) * jarW);
+        const cy = Math.floor((yPercent / 100) * jarH);
+
+        const rect = {
+            x: cx - Math.round(width / 2),
+            y: cy - Math.round(height / 2),
+            w: width,
+            h: height
+        };
+
+        return { chosen: true, cx, cy, rect };
+    }
+
+    // First attempt: random placement (original behavior)
+    const placements = [];
+    for (const p of planned) {
+        const res = tryPlaceRandom(p, p.index);
+        if (res.chosen) {
+            placements.push({ ...p, cx: res.cx, cy: res.cy, placedVia: 'random', tl: res.rect });
+        } else {
+            placements.push({ ...p, cx: 0, cy: 0, placedVia: 'grid', tl: null, willGrid: true });
+        }
+    }
+
+    const anyUnplaced = placements.some(pl => pl.willGrid);
+
+    // Grid fallback: guarantee separation and easy tapping
+    if (anyUnplaced) {
+        const cellW = 80;
+        const cellH = 44;
+        const cols = Math.max(3, Math.floor(jarW / cellW));
+
+        let gridIndex = 0;
+        for (const pl of placements) {
+            if (!pl.willGrid) continue;
+            const r = Math.floor(gridIndex / cols);
+            const c = gridIndex % cols;
+            gridIndex++;
+
+            const x = Math.min(jarW - Math.round(pl.width / 2) - 4, Math.max(Math.round(pl.width / 2) + 4, c * cellW + cellW / 2));
+            const yTopSafe = 26;
+            const y = Math.min(jarH - Math.round(pl.height / 2) - 4, Math.max(yTopSafe + Math.round(pl.height / 2), r * cellH + cellH / 2));
+
+            pl.cx = Math.round(x);
+            pl.cy = Math.round(y);
+            pl.tl = {
+                x: pl.cx - Math.round(pl.width / 2),
+                y: pl.cy - Math.round(pl.height / 2),
+                w: pl.width,
+                h: pl.height
+            };
+            pl.placedVia = 'grid';
+            delete pl.willGrid;
+        }
+    }
+
+    // Apply transforms and event handlers
+    placements.forEach((p) => {
+        const roll = p.roll;
+        const width = p.width;
+        const height = p.height;
+
+        // compute rotation and scale (more natural scatter)
+        // Keep scale capped to reduce visual overlap risk.
+        const angle = (Math.random() - 0.5) * 28;
+        const scale = 0.92 + Math.random() * 0.16;
+
+
+        roll.style.left = (p.cx) + 'px';
+        roll.style.top = (p.cy) + 'px';
+        roll.style.transform = `translate(-50%, -50%) rotate(${angle}deg) scale(${scale})`;
+        roll.style.zIndex = String(40 + Math.floor(Math.random() * 60));
+        roll.style.position = 'absolute';
+
+        // mark collision rects for remaining placements in future runs (already applied)
+        if (p.tl) placedRects.push(p.tl);
+
+        // gentle wiggle animation delay
+        roll.style.animationDelay = (Math.random() * 2.4) + 's';
+
+        // hover effects
+        roll.addEventListener('mouseenter', () => roll.classList.add('roll-hover'));
+        roll.addEventListener('mouseleave', () => roll.classList.remove('roll-hover'));
+
+        // keyboard accessibility
+        roll.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); roll.click(); }
+        });
+
+        // click to open
+        roll.addEventListener('click', async () => {
+            const idx = Number(roll.dataset.noteIndex);
+            if (roll.classList.contains('opened')) return;
+            await animatePullAndUnroll(roll, item.notes[idx], idx + 1);
+            // mark opened in jar
+            roll.classList.add('opened');
+            roll.style.opacity = '0.45';
         });
     });
+
+    // place rolls inside the jar while avoiding heavy overlap
     closeButton?.addEventListener('click', () => {
         popup.classList.add('hidden');
         popup.setAttribute('aria-hidden', 'true');
     });
+
     popup?.addEventListener('click', event => {
         if (event.target === popup) {
             popup.classList.add('hidden');
             popup.setAttribute('aria-hidden', 'true');
         }
     });
+
+    // animation flow: pull -> untie ribbon -> unroll -> show content
+    function animatePullAndUnroll(rollEl, noteText, displayIndex) {
+        return new Promise(resolve => {
+            const rect = rollEl.getBoundingClientRect();
+            const clone = rollEl.cloneNode(true);
+            clone.classList.add('roll-clone');
+            document.body.appendChild(clone);
+            clone.style.position = 'fixed';
+            clone.style.left = rect.left + 'px';
+            clone.style.top = rect.top + 'px';
+            clone.style.width = rect.width + 'px';
+            clone.style.height = rect.height + 'px';
+            clone.style.transform = 'translate3d(0,0,0) rotate(0deg) scale(1)';
+            clone.style.transition = 'transform 520ms cubic-bezier(.2,.9,.2,1), left 520ms ease, top 520ms ease, opacity 300ms ease';
+            clone.style.willChange = 'transform, left, top, opacity';
+
+            // temporarily disable interactions to avoid weird state while animating
+            openSurpriseModal?.classList.add('animating');
+            const prevPointer = jarInner.style.pointerEvents;
+            jarInner.style.pointerEvents = 'none';
+
+            // force reflow then move to center
+            requestAnimationFrame(() => {
+                const cx = Math.round((window.innerWidth - rect.width) / 2);
+                const cy = Math.round((window.innerHeight - rect.height) / 2);
+                // use left/top and transform for best GPU performance
+                clone.style.left = cx + 'px';
+                clone.style.top = cy + 'px';
+                clone.style.transform = 'translate3d(0,0,0) rotate(0deg) scale(1.04)';
+                clone.style.zIndex = 11000;
+            });
+
+            // after move, untie ribbon
+            setTimeout(() => {
+                clone.classList.add('untie');
+            }, 500);
+
+            // after untie, unroll paper (show popup with animation)
+            setTimeout(() => {
+                popupTitle.textContent = `Reason ${displayIndex}`;
+                popupText.textContent = '';
+                popup.classList.remove('hidden');
+                popup.setAttribute('aria-hidden', 'false');
+                // animate typed reveal
+                let i = 0;
+                const text = noteText;
+                const interval = setInterval(() => {
+                    popupText.textContent += text.charAt(i);
+                    i++;
+                    if (i >= text.length) clearInterval(interval);
+                }, 12);
+
+                // cleanup clone after content revealed
+                setTimeout(() => {
+                    clone.style.opacity = '0';
+                    setTimeout(() => {
+                        clone.remove();
+                        // re-enable interactions
+                        openSurpriseModal?.classList.remove('animating');
+                        jarInner.style.pointerEvents = prevPointer || '';
+                        resolve();
+                    }, 420);
+                }, 900);
+            }, 980);
+        });
+    }
 }
 
 function buildFinalContent(item) {
