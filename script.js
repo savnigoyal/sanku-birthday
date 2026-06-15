@@ -862,6 +862,7 @@ function openSurprise(key) {
     const item = surpriseSchedule.find(entry => entry.key === key);
     if (!item) return;
     if (item.key === '2026-06-15') {
+        showSurprise();
         startCelebrationSequence();
         return;
     }

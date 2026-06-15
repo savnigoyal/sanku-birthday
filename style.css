@@ -910,6 +910,8 @@ body, button, .primary-button, .glass-canvas {
 }
 
 .surprise-cards-grid {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
@@ -927,18 +929,20 @@ body, button, .primary-button, .glass-canvas {
     overflow: hidden;
     color: #fff;
     cursor: pointer !important;
+    pointer-events: auto;
     transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
     display: grid;
     align-content: space-between;
 }
 
 .surprise-card:hover {
-    z-index: 3;
+    z-index: 10;
     cursor: pointer !important;
 }
 
 .surprise-card * {
     cursor: inherit !important;
+    pointer-events: auto;
 }
 
 .surprise-card::before {
