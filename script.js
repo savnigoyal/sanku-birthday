@@ -667,7 +667,331 @@ function updateCountdown() {
     secsValue.textContent = String(secs).padStart(2, '0');
 }
 
+const surpriseCardGrid = document.getElementById('surpriseCardGrid');
+const openSurpriseModal = document.getElementById('openSurpriseModal');
+const closeOpenSurpriseModal = document.getElementById('closeOpenSurpriseModal');
+const openSurpriseTitle = document.getElementById('openSurpriseTitle');
+const openSurpriseContent = document.getElementById('openSurpriseContent');
+const openSurpriseIcon = document.getElementById('openSurpriseIcon');
+
+const surpriseSchedule = [
+    {
+        key: '2026-06-15',
+        label: '15 June ❤️',
+        display: '15 June',
+        title: 'A Glimpse of My Favorite Future 💍',
+        type: 'classic',
+        content: `Hi Sanku ❤️\n\nYour birthday is coming soon, so I wanted to begin with something special. Maybe I don’t know what life has planned for us… But if I could choose, I would choose a future with you. A future where I get to sit beside you like this, laugh with you, annoy you, and keep choosing you every day. This is one of my favorite dreams. ❤️`,
+    },
+    {
+        key: '2026-06-16',
+        label: '16 June ❤️',
+        display: '16 June',
+        title: '20 Reasons Why I Love You Jar ❤️',
+        type: 'jar',
+        notes: [
+            'You are a part of my life now—no, sorry, you are my life now. You are my support system, and I know I can always rely on you.',
+            'You are always respectful towards me, no matter what.',
+            'You are the only one who can handle all my nakhre.',
+            'I love the way you make me feel—safe, loved, and special.',
+            'You are so loyal and trustworthy, and that means everything to me.',
+            'You make even my normal days feel special.',
+            'I love how patient you are with me, even when I’m being difficult.',
+            'You understand me even when I don’t say much.',
+            'Your smile can instantly make my mood better.',
+            'I love how comfortable I feel around you—I can truly be myself.',
+            'You listen to me, even when I rant about random things.',
+            'I love how you care about the little things related to me.',
+            'You make me laugh when I need it the most.',
+            'I love how protective you are without being controlling.',
+            'You make me feel like I matter.',
+            'In my eyes, you are perfect exactly the way you are—your flaws, your strengths, everything.',
+            'You’ve become my favorite notification.',
+            'I love that with you, silence never feels awkward.',
+            'You bring peace to my chaos.',
+            'I love you simply because you are you, Sanku ❤️'
+        ]
+    },
+    {
+        key: '2026-06-17',
+        label: '17 June ❤️',
+        display: '17 June',
+        title: 'A Quiet Promise',
+        type: 'note',
+        content: 'A gentle love note just for today: I feel lucky every day that you are mine. You make ordinary moments feel unforgettable.'
+    },
+    {
+        key: '2026-06-18',
+        label: '18 June ❤️',
+        display: '18 June',
+        title: 'A Heartfelt Whisper',
+        type: 'note',
+        content: 'On this day, I want to whisper how much I adore you. Your smile, your kindness, and the way you care are my favorite parts of life.'
+    },
+    {
+        key: '2026-06-19',
+        label: '19 June ❤️',
+        display: '19 June',
+        title: 'A Sweet Gratitude',
+        type: 'note',
+        content: 'Thank you for filling my world with warmth. Today’s surprise is a little reminder that you are cherished and loved beyond words.'
+    },
+    {
+        key: '2026-06-20',
+        label: '20 June ❤️',
+        display: '20 June',
+        title: 'A Promise for Us',
+        type: 'note',
+        content: 'Every day with you feels like a gift. This note is a promise that I will choose you—today, tomorrow, and forever.'
+    },
+    {
+        key: '2026-06-21',
+        label: '21 June ❤️',
+        display: '21 June',
+        title: 'A Moonlit Wish',
+        type: 'note',
+        content: 'A quiet wish for us: may our journey be filled with laughter, patience, and endless beautiful memories together.'
+    },
+    {
+        key: '2026-06-22',
+        label: '22 June ❤️',
+        display: '22 June',
+        title: 'A Little Thank You',
+        type: 'note',
+        content: 'Thank you for being my comfort, my partner, and my favorite person. I treasure every moment we share.'
+    },
+    {
+        key: '2026-06-23',
+        label: '23 June ❤️',
+        display: '23 June',
+        title: 'A Loving Reminder',
+        type: 'note',
+        content: 'This surprise is a reminder that you are loved deeply, exactly as you are. Your presence makes every day brighter.'
+    },
+    {
+        key: '2026-06-24',
+        label: '24 June ❤️',
+        display: '24 June',
+        title: 'A Tender Moment',
+        type: 'note',
+        content: 'A little note to say I adore you. Your kindness and your smile are some of the best parts of my world.'
+    },
+    {
+        key: '2026-06-25',
+        label: '25 June ❤️',
+        display: '25 June',
+        title: 'A Pre-Birthday Wish',
+        type: 'note',
+        content: 'The big day is almost here, and I am so excited to celebrate you. This note is full of love, joy, and anticipation.'
+    },
+    {
+        key: '2026-06-26',
+        label: '26 June 🎂',
+        display: '26 June',
+        title: 'Final Birthday Surprise 🎂',
+        type: 'final',
+        content: 'The final surprise is here. Enjoy fireworks, confetti, music, and the special reveal that celebrates you in the most magical way.'
+    }
+];
+
+function parseLocalMidnight(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return new Date(year, month - 1, day, 0, 0, 0, 0).getTime();
+}
+
+function getTodayMidnight() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+}
+
+function isCardUnlocked(dateKey) {
+    return getTodayMidnight() >= parseLocalMidnight(dateKey);
+}
+
+function buildSurpriseCard(item) {
+    const unlocked = isCardUnlocked(item.key);
+    const isFinal = item.type === 'final';
+    const icon = unlocked ? (isFinal ? '🎂' : '🎁') : '🔒';
+    const noteText = unlocked ? (item.type === 'jar' ? 'Open Surprise 🎁' : 'Tap to open the surprise') : `Unlocks on ${item.display}`;
+
+    return `
+        <article class="surprise-card ${unlocked ? 'active' : 'locked'} ${isFinal ? 'final-card' : ''}" data-surprise-key="${item.key}" tabindex="0" role="button" aria-pressed="${unlocked}">
+            <div class="card-top">
+                <span class="card-date">${item.label}</span>
+                <span class="card-status">${unlocked ? 'Open Surprise 🎁' : 'Locked'}</span>
+            </div>
+            <div class="card-footer">
+                <p class="card-note">${noteText}</p>
+                <div class="card-icon">${icon}</div>
+            </div>
+            <div class="locked-tooltip">This surprise unlocks on ${item.display} ❤️</div>
+        </article>
+    `;
+}
+
+function renderSurpriseCards() {
+    if (!surpriseCardGrid) return;
+    surpriseCardGrid.innerHTML = surpriseSchedule.map(buildSurpriseCard).join('');
+}
+
+function refreshSurpriseCards() {
+    if (!surpriseCardGrid) return;
+    surpriseCardGrid.querySelectorAll('.surprise-card').forEach(card => {
+        const key = card.dataset.surpriseKey;
+        const item = surpriseSchedule.find(entry => entry.key === key);
+        if (!item) return;
+        const unlocked = isCardUnlocked(key);
+        card.classList.toggle('locked', !unlocked);
+        card.classList.toggle('active', unlocked);
+        card.querySelector('.card-status').textContent = unlocked ? 'Open Surprise 🎁' : 'Locked';
+        card.querySelector('.card-note').textContent = unlocked ? (item.type === 'jar' ? 'Open Surprise 🎁' : 'Tap to open the surprise') : `Unlocks on ${item.display}`;
+        card.querySelector('.card-icon').textContent = unlocked ? (item.type === 'final' ? '🎂' : '🎁') : '🔒';
+        card.setAttribute('aria-pressed', String(unlocked));
+    });
+}
+
+function openSurprise(key) {
+    const item = surpriseSchedule.find(entry => entry.key === key);
+    if (!item) return;
+    if (item.key === '2026-06-15') {
+        startCelebrationSequence();
+        return;
+    }
+    openSurpriseIcon.textContent = item.type === 'final' ? '🎂' : '🎁';
+    openSurpriseTitle.textContent = item.title;
+    if (item.type === 'jar') {
+        openSurpriseContent.innerHTML = buildJarContent(item);
+        attachJarInteractions(item);
+        openSurpriseModal.classList.remove('hidden');
+    } else if (item.type === 'final') {
+        openSurpriseContent.innerHTML = buildFinalContent(item);
+        openSurpriseModal.classList.remove('hidden');
+        playBirthdayMusic();
+        runConfetti(5200);
+        createFloatingEmojis();
+    } else {
+        openSurpriseContent.innerHTML = buildGenericContent(item);
+        openSurpriseModal.classList.remove('hidden');
+    }
+}
+
+function buildJarContent(item) {
+    return `
+        <div class="jar-stage">
+            <div class="jar-shell" aria-hidden="true"></div>
+            <div class="jar-notes-grid">
+                ${item.notes.map((note, index) => `
+                    <button class="jar-note" type="button" data-note-index="${index}">
+                        <span>Roll ${index + 1}</span>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+        <div class="jar-note-popup hidden" id="jarNotePopup" aria-hidden="true">
+            <div class="jar-note-popup-card">
+                <button class="jar-note-close" type="button" aria-label="Close note">✕</button>
+                <div class="jar-note-title">Note</div>
+                <p class="jar-note-text"></p>
+            </div>
+        </div>
+        <p>Click a paper roll to pull out a note. Once opened, that roll will stay softly faded in the jar.</p>
+    `;
+}
+
+function attachJarInteractions(item) {
+    const noteButtons = openSurpriseContent.querySelectorAll('.jar-note');
+    const popup = openSurpriseContent.querySelector('#jarNotePopup');
+    const popupText = openSurpriseContent.querySelector('.jar-note-text');
+    const popupTitle = openSurpriseContent.querySelector('.jar-note-title');
+    const closeButton = openSurpriseContent.querySelector('.jar-note-close');
+    noteButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const index = Number(btn.dataset.noteIndex);
+            const noteText = item.notes[index];
+            popupTitle.textContent = `Reason ${index + 1}`;
+            popupText.textContent = noteText;
+            popup.classList.remove('hidden');
+            popup.setAttribute('aria-hidden', 'false');
+            btn.classList.add('opened');
+        });
+    });
+    closeButton?.addEventListener('click', () => {
+        popup.classList.add('hidden');
+        popup.setAttribute('aria-hidden', 'true');
+    });
+    popup?.addEventListener('click', event => {
+        if (event.target === popup) {
+            popup.classList.add('hidden');
+            popup.setAttribute('aria-hidden', 'true');
+        }
+    });
+}
+
+function buildFinalContent(item) {
+    return `
+        <div class="final-surprise-glow"></div>
+        <div class="final-surprise-text">
+            <p>${item.content}</p>
+            <ul>
+                <li>Confetti explosion</li>
+                <li>Fireworks sparkle</li>
+                <li>Happy Birthday music</li>
+                <li>Floating hearts everywhere</li>
+            </ul>
+        </div>
+        <div class="final-video-reveal">
+            <div class="final-video-placeholder">
+                <div>🎥 Final video reveal</div>
+                <small>Replace this with your final video or add a video file named <code>final-surprise.mp4</code>.</small>
+            </div>
+        </div>
+    `;
+}
+
+function buildGenericContent(item) {
+    return `<p>${item.content}</p>`;
+}
+
+function handleSurpriseCardClick(event) {
+    const card = event.target.closest('.surprise-card');
+    if (!card || !card.dataset.surpriseKey) return;
+    const item = surpriseSchedule.find(entry => entry.key === card.dataset.surpriseKey);
+    if (!item) return;
+    if (!isCardUnlocked(item.key)) {
+        alert(`This surprise unlocks on ${item.display} ❤️`);
+        return;
+    }
+    openSurprise(item.key);
+}
+
+surpriseCardGrid?.addEventListener('click', handleSurpriseCardClick);
+surpriseCardGrid?.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleSurpriseCardClick(event);
+    }
+});
+
+closeOpenSurpriseModal?.addEventListener('click', () => {
+    openSurpriseModal?.classList.add('hidden');
+});
+
+openSurpriseModal?.addEventListener('click', event => {
+    if (event.target === openSurpriseModal) {
+        openSurpriseModal.classList.add('hidden');
+    }
+});
+
+function checkSurpriseAvailability() {
+    if (surpriseBtn) {
+        surpriseBtn.disabled = false;
+        surpriseBtn.classList.remove('disabled');
+    }
+    refreshSurpriseCards();
+}
+
 updateCountdown();
+renderSurpriseCards();
 setInterval(() => {
     updateCountdown();
     checkSurpriseAvailability();
