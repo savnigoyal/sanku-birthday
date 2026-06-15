@@ -917,6 +917,7 @@ body, button, .primary-button, .glass-canvas {
 
 .surprise-card {
     position: relative;
+    z-index: 1;
     min-height: 130px;
     padding: 20px 18px;
     border-radius: 28px;

@@ -265,8 +265,16 @@ function checkSurpriseAvailability() {
 }
 
 surpriseBtn.addEventListener('click', () => {
-    startCelebrationSequence();
+    const latestKey = getLatestUnlockedSurpriseKey();
+    if (latestKey) {
+        openSurprise(latestKey);
+    }
 });
+
+function getLatestUnlockedSurpriseKey() {
+    const unlocked = surpriseSchedule.filter(item => isCardUnlocked(item.key));
+    return unlocked.length ? unlocked[unlocked.length - 1].key : null;
+}
 
 // --- Celebration sequence: confetti, floating emojis, burst, pop sound, reveal ---
 const confettiCanvas = document.getElementById('confettiCanvas');
