@@ -284,7 +284,8 @@ let confettiRAF = null;
 // DEBUG: force-unlock specific surprises for preview (remove or clear when done)
 const FORCE_UNLOCKED_KEYS = [
     // add surprise keys here to force them unlocked for preview
-    '2026-06-16'
+    '2026-06-16',
+    '2026-06-17'
 ];
 
 function playPopSound() {
@@ -730,9 +731,8 @@ const surpriseSchedule = [
         key: '2026-06-17',
         label: '17 June ❤️',
         display: '17 June',
-        title: 'A Quiet Promise',
-        type: 'note',
-        content: 'A gentle love note just for today: I feel lucky every day that you are mine. You make ordinary moments feel unforgettable.'
+        title: 'Puzzle Surprise ❤️',
+        type: 'puzzle'
     },
     {
         key: '2026-06-18',
@@ -868,32 +868,48 @@ function refreshSurpriseCards() {
 function openSurprise(key) {
     const item = surpriseSchedule.find(entry => entry.key === key);
     if (!item) return;
+
     if (item.key === '2026-06-15') {
         showSurprise();
         startCelebrationSequence();
         return;
     }
-    openSurpriseIcon.textContent = item.type === 'final' ? '🎂' : '🎁';
+
+    openSurpriseIcon.textContent =
+        item.type === 'final' ? '🎂' : '🎁';
+
     openSurpriseTitle.textContent = item.title;
+
     if (item.type === 'jar') {
         openSurpriseContent.innerHTML = buildJarContent(item);
         attachJarInteractions(item);
         openSurpriseModal.classList.remove('hidden');
-        // ensure modal is scrolled to top and focus first roll for accessibility
+
         try {
             openSurpriseModal.scrollTop = 0;
-            openSurpriseModal.querySelector('.open-surprise-panel')?.scrollTo({ top: 0 });
+            openSurpriseModal
+                .querySelector('.open-surprise-panel')
+                ?.scrollTo({ top: 0 });
         } catch (e) {}
+
         setTimeout(() => {
-            const firstRoll = openSurpriseContent.querySelector('.roll');
+            const firstRoll =
+                openSurpriseContent.querySelector('.roll');
             firstRoll?.focus();
         }, 120);
+
+    } else if (item.type === 'puzzle') {
+        openSurpriseContent.innerHTML = buildPuzzleContent();
+        openSurpriseModal.classList.remove('hidden');
+        initializePuzzle();
+
     } else if (item.type === 'final') {
         openSurpriseContent.innerHTML = buildFinalContent(item);
         openSurpriseModal.classList.remove('hidden');
         playBirthdayMusic();
         runConfetti(5200);
         createFloatingEmojis();
+
     } else {
         openSurpriseContent.innerHTML = buildGenericContent(item);
         openSurpriseModal.classList.remove('hidden');
@@ -953,14 +969,12 @@ function attachJarInteractions(item) {
     const popupTitle = openSurpriseContent.querySelector('.jar-note-title');
     const closeButton = openSurpriseContent.querySelector('.jar-note-close');
 
-    // place rolls inside the jar with strong separation (no overlap) with a grid fallback
+    // Collision-aware no-overlap placement
     const placedRects = [];
     const jarW = jarInner.clientWidth;
     const jarH = jarInner.clientHeight;
 
-function rectsOverlap(r1, r2, padding = 18) {
-        // padding is intentionally large to prevent even visual overlap
-        // when rolls scale/rotate on hover and while animating.
+    function rectsOverlap(r1, r2, padding) {
         return !(
             r1.x + r1.w + padding < r2.x ||
             r2.x + r2.w + padding < r1.x ||
@@ -969,8 +983,10 @@ function rectsOverlap(r1, r2, padding = 18) {
         );
     }
 
-    // If jar is too small to place all rolls without overlap (depending on randomized sizes),
-    // fall back to a deterministic grid layout.
+    // Conservative padding so even with hover lift + slight scale, rolls stay separated.
+    const COLLISION_PADDING = 22;
+
+    // If jar is too small, we still guarantee layout via deterministic grid packing.
     const planned = [];
     rolls.forEach((roll, i) => {
         const baseW = 66;
@@ -979,8 +995,9 @@ function rectsOverlap(r1, r2, padding = 18) {
         const maxW = Math.max(72, Math.floor(jarW * 0.20));
         const maxH = Math.max(26, Math.floor(jarH * 0.12));
 
-        const randW = Math.round(baseW + Math.random() * 62);
-        const randH = Math.round(baseH + Math.random() * 32);
+        // Slightly reduce randomness to make packing reliable.
+        const randW = Math.round(baseW + Math.random() * 46);
+        const randH = Math.round(baseH + Math.random() * 24);
         const width = Math.min(randW, maxW);
         const height = Math.min(randH, maxH);
 
@@ -990,83 +1007,129 @@ function rectsOverlap(r1, r2, padding = 18) {
         planned.push({ roll, index: i, width, height });
     });
 
-    function tryPlaceRandom({ width, height }, idx) {
-        const padding = 10;
-        const minY = 8;
-        const minX = 6;
-        const maxX = 94;
-        const maxY = 94;
-
-        const xPercent = minX + Math.random() * (maxX - minX);
-        const yPercent = minY + Math.random() * (maxY - minY);
-
-        const cx = Math.floor((xPercent / 100) * jarW);
-        const cy = Math.floor((yPercent / 100) * jarH);
-
-        const rect = {
+    function makeRect(cx, cy, width, height) {
+        return {
             x: cx - Math.round(width / 2),
             y: cy - Math.round(height / 2),
             w: width,
             h: height
         };
-
-        return { chosen: true, cx, cy, rect };
     }
 
-    // First attempt: random placement (original behavior)
+    function canPlace(rect) {
+        for (const pr of placedRects) {
+            if (rectsOverlap(pr, rect, COLLISION_PADDING)) return false;
+        }
+        return true;
+    }
+
+    function placeWithRetries(p, attempts) {
+        const minX = 8;
+        const maxX = 92;
+        const minY = 8;
+        const maxY = 92;
+
+        for (let a = 0; a < attempts; a++) {
+            const xPercent = minX + Math.random() * (maxX - minX);
+            const yPercent = minY + Math.random() * (maxY - minY);
+
+            const cx = Math.floor((xPercent / 100) * jarW);
+            const cy = Math.floor((yPercent / 100) * jarH);
+
+            const rect = makeRect(cx, cy, p.width, p.height);
+            if (!canPlace(rect)) continue;
+
+            placedRects.push(rect);
+            return { cx, cy, rect };
+        }
+        return null;
+    }
+
+    // 1) Attempt packing with collision checks
     const placements = [];
     for (const p of planned) {
-        const res = tryPlaceRandom(p, p.index);
-        if (res.chosen) {
-            placements.push({ ...p, cx: res.cx, cy: res.cy, placedVia: 'random', tl: res.rect });
+        const res = placeWithRetries(p, 500);
+        if (res) {
+            placements.push({ ...p, cx: res.cx, cy: res.cy, tl: res.rect });
         } else {
-            placements.push({ ...p, cx: 0, cy: 0, placedVia: 'grid', tl: null, willGrid: true });
+            // mark for deterministic grid fallback
+            placements.push({ ...p, cx: null, cy: null, tl: null, willGrid: true });
         }
     }
 
-    const anyUnplaced = placements.some(pl => pl.willGrid);
+    // 2) Deterministic grid packing for anything unplaced
+    const gridPadding = COLLISION_PADDING;
+    const cellW = 92;
+    const cellH = 52;
+    const cols = Math.max(3, Math.floor(jarW / cellW));
 
-    // Grid fallback: guarantee separation and easy tapping
-    if (anyUnplaced) {
-        const cellW = 80;
-        const cellH = 44;
-        const cols = Math.max(3, Math.floor(jarW / cellW));
+    // Reset placedRects to reflect final placements only
+    placedRects.length = 0;
+    for (const pl of placements) {
+        if (!pl.willGrid && pl.tl) placedRects.push(pl.tl);
+    }
 
-        let gridIndex = 0;
-        for (const pl of placements) {
-            if (!pl.willGrid) continue;
-            const r = Math.floor(gridIndex / cols);
-            const c = gridIndex % cols;
-            gridIndex++;
+    let gridIndex = 0;
+    for (const pl of placements) {
+        if (!pl.willGrid) continue;
 
-            const x = Math.min(jarW - Math.round(pl.width / 2) - 4, Math.max(Math.round(pl.width / 2) + 4, c * cellW + cellW / 2));
-            const yTopSafe = 26;
-            const y = Math.min(jarH - Math.round(pl.height / 2) - 4, Math.max(yTopSafe + Math.round(pl.height / 2), r * cellH + cellH / 2));
+        const r = Math.floor(gridIndex / cols);
+        const c = gridIndex % cols;
+        gridIndex++;
 
-            pl.cx = Math.round(x);
-            pl.cy = Math.round(y);
-            pl.tl = {
-                x: pl.cx - Math.round(pl.width / 2),
-                y: pl.cy - Math.round(pl.height / 2),
-                w: pl.width,
-                h: pl.height
-            };
-            pl.placedVia = 'grid';
-            delete pl.willGrid;
+        const x = c * cellW + cellW / 2;
+        const yTopSafe = 20;
+        const y = r * cellH + cellH / 2 + yTopSafe;
+
+        // clamp within jar bounds
+        const cx = Math.max(Math.round(pl.width / 2) + 4, Math.min(jarW - Math.round(pl.width / 2) - 4, Math.round(x)));
+        const cy = Math.max(Math.round(pl.height / 2) + 4, Math.min(jarH - Math.round(pl.height / 2) - 4, Math.round(y)));
+
+        const rect = makeRect(cx, cy, pl.width, pl.height);
+        // If grid cell still overlaps (rare), push it slightly in-place deterministically
+        if (!canPlace(rect)) {
+            let placed = false;
+            const jitter = [-12, 0, 12, -24, 24];
+            for (const jx of jitter) {
+                for (const jy of jitter) {
+                    const rcx = Math.max(Math.round(pl.width / 2) + 4, Math.min(jarW - Math.round(pl.width / 2) - 4, cx + jx));
+                    const rcy = Math.max(Math.round(pl.height / 2) + 4, Math.min(jarH - Math.round(pl.height / 2) - 4, cy + jy));
+                    const rrect = makeRect(rcx, rcy, pl.width, pl.height);
+                    if (canPlace(rrect)) {
+                        placedRects.push(rrect);
+                        pl.cx = rcx;
+                        pl.cy = rcy;
+                        pl.tl = rrect;
+                        placed = true;
+                        break;
+                    }
+                }
+                if (placed) break;
+            }
+            if (!placed) {
+                // last resort: ignore collision (should be very rare)
+                pl.cx = cx;
+                pl.cy = cy;
+                pl.tl = rect;
+                placedRects.push(rect);
+            }
+        } else {
+            placedRects.push(rect);
+            pl.cx = cx;
+            pl.cy = cy;
+            pl.tl = rect;
         }
+
+        delete pl.willGrid;
     }
 
     // Apply transforms and event handlers
     placements.forEach((p) => {
         const roll = p.roll;
-        const width = p.width;
-        const height = p.height;
 
-        // compute rotation and scale (more natural scatter)
-        // Keep scale capped to reduce visual overlap risk.
-        const angle = (Math.random() - 0.5) * 28;
-        const scale = 0.92 + Math.random() * 0.16;
-
+        // Smaller rotation range + capped scale for more reliable separation.
+        const angle = (Math.random() - 0.5) * 18;
+        const scale = 0.94 + Math.random() * 0.10;
 
         roll.style.left = (p.cx) + 'px';
         roll.style.top = (p.cy) + 'px';
@@ -1074,27 +1137,21 @@ function rectsOverlap(r1, r2, padding = 18) {
         roll.style.zIndex = String(40 + Math.floor(Math.random() * 60));
         roll.style.position = 'absolute';
 
-        // mark collision rects for remaining placements in future runs (already applied)
         if (p.tl) placedRects.push(p.tl);
 
-        // gentle wiggle animation delay
         roll.style.animationDelay = (Math.random() * 2.4) + 's';
 
-        // hover effects
         roll.addEventListener('mouseenter', () => roll.classList.add('roll-hover'));
         roll.addEventListener('mouseleave', () => roll.classList.remove('roll-hover'));
 
-        // keyboard accessibility
         roll.addEventListener('keydown', (ev) => {
             if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); roll.click(); }
         });
 
-        // click to open
         roll.addEventListener('click', async () => {
             const idx = Number(roll.dataset.noteIndex);
             if (roll.classList.contains('opened')) return;
             await animatePullAndUnroll(roll, item.notes[idx], idx + 1);
-            // mark opened in jar
             roll.classList.add('opened');
             roll.style.opacity = '0.45';
         });
@@ -1249,7 +1306,186 @@ function checkSurpriseAvailability() {
     }
     refreshSurpriseCards();
 }
+let puzzleTiles = [];
+let emptyIndex = 8;
+let moveCount = 0;
 
+function buildPuzzleContent() {
+    return `
+        <div class="puzzle-wrapper">
+            <h3>Before today’s surprise unlocks, solve a harder puzzle ❤️</h3>
+            <p>Arrange the pieces correctly. Fewer moves = more love ✨</p>
+
+            <div id="moveCounter">Moves: 0</div>
+            <div id="puzzleBoard" class="puzzle-board" aria-label="Sliding puzzle board" role="grid"></div>
+
+            <button id="shufflePuzzleBtn" type="button">Shuffle (Hard)</button>
+
+            <div id="puzzleResult" aria-live="polite"></div>
+        </div>
+    `;
+}
+
+function initializePuzzle() {
+    const board = document.getElementById('puzzleBoard');
+    const shuffleBtn = document.getElementById('shufflePuzzleBtn');
+
+// 4x4 (16-piece) puzzle: tiles 0..14 and null is the empty slot.
+    // Solved state would be [0..14, null].
+    puzzleTiles = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,null];
+    emptyIndex = 15;
+    moveCount = 0;
+
+
+    renderPuzzle();
+
+    shufflePuzzle();
+
+    shuffleBtn.addEventListener('click', shufflePuzzle);
+}
+
+function renderPuzzle() {
+    const board = document.getElementById('puzzleBoard');
+    const counter = document.getElementById('moveCounter');
+    if (!board) return;
+
+    // Enforce invariant: exactly one empty tile (null)
+    if (!Array.isArray(puzzleTiles) || puzzleTiles.length !== 16) {
+        puzzleTiles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, null];
+        emptyIndex = 15;
+        moveCount = 0;
+    }
+
+    const nullCount = puzzleTiles.reduce((acc, t) => acc + (t === null ? 1 : 0), 0);
+    if (nullCount !== 1) {
+        puzzleTiles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, null];
+        emptyIndex = 15;
+    } else {
+        emptyIndex = puzzleTiles.indexOf(null);
+    }
+
+    board.innerHTML = '';
+    counter.textContent = `Moves: ${moveCount}`;
+
+    const gridSize = 4;
+
+    puzzleTiles.forEach((tile, index) => {
+        const div = document.createElement('div');
+        div.className = 'tile';
+
+        if (tile === null) {
+            div.classList.add('empty');
+            // no onclick for empty
+        } else {
+            const row = Math.floor(tile / gridSize);
+            const col = tile % gridSize;
+
+            div.dataset.index = String(index);
+            div.onclick = () => moveTile(index);
+
+            // Correct slicing for a 4x4 grid (15 tiles + 1 empty)
+            div.style.backgroundImage = "url('puzzle.jpeg')";
+            div.style.backgroundRepeat = 'no-repeat';
+            div.style.backgroundSize = '400% 400%';
+            div.style.backgroundPosition = `${(col * 33.33)}% ${(row * 33.33)}%`;
+        }
+
+        board.appendChild(div);
+    });
+}
+
+function moveTile(index) {
+    const gridSize = 4;
+
+    // tile at `index` can move only if adjacent to the empty tile
+    const tileRow = Math.floor(index / gridSize);
+    const tileCol = index % gridSize;
+
+    const emptyRow = Math.floor(emptyIndex / gridSize);
+    const emptyCol = emptyIndex % gridSize;
+
+    const isAdjacent =
+        (tileRow === emptyRow && Math.abs(tileCol - emptyCol) === 1) ||
+        (tileCol === emptyCol && Math.abs(tileRow - emptyRow) === 1);
+
+    if (!isAdjacent) return;
+    if (puzzleTiles[index] === null) return;
+
+    // swap tile with empty
+    [puzzleTiles[index], puzzleTiles[emptyIndex]] = [puzzleTiles[emptyIndex], puzzleTiles[index]];
+    emptyIndex = index;
+    moveCount++;
+
+    renderPuzzle();
+    checkPuzzleSolved();
+}
+
+function shufflePuzzle() {
+    const gridSize = 4;
+
+    // Start from solved state every time so it's guaranteed solvable.
+    puzzleTiles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, null];
+    emptyIndex = 15;
+    moveCount = 0;
+
+    // Perform exactly 300 random valid moves from the empty tile.
+    // Each step: choose one of the tiles adjacent to the empty and swap.
+    for (let i = 0; i < 300; i++) {
+        const emptyRow = Math.floor(emptyIndex / gridSize);
+        const emptyCol = emptyIndex % gridSize;
+
+        const candidates = [];
+
+        // left/right (same row)
+        if (emptyCol > 0) candidates.push(emptyIndex - 1);
+        if (emptyCol < gridSize - 1) candidates.push(emptyIndex + 1);
+        // up/down (adjacent rows)
+        if (emptyRow > 0) candidates.push(emptyIndex - gridSize);
+        if (emptyRow < gridSize - 1) candidates.push(emptyIndex + gridSize);
+
+        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+        [puzzleTiles[chosen], puzzleTiles[emptyIndex]] = [puzzleTiles[emptyIndex], puzzleTiles[chosen]];
+        emptyIndex = chosen;
+    }
+
+    // sanity: must still be exactly one null
+    if (puzzleTiles.filter(t => t === null).length !== 1) {
+        puzzleTiles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, null];
+        emptyIndex = 15;
+    }
+
+    renderPuzzle();
+    checkPuzzleSolved();
+}
+
+
+
+function checkPuzzleSolved() {
+    const solved =
+        puzzleTiles.slice(0,8).every((tile, i) => tile === i) &&
+        puzzleTiles[8] === null;
+
+    if (!solved) return;
+
+    runConfetti(5000);
+    createFloatingEmojis();
+
+    setTimeout(() => {
+        document.getElementById('puzzleResult').innerHTML = `
+            <img src="surprise.png" class="surprise-reveal-img">
+            <div class="puzzle-love-note">
+                <p>You solved it ❤️</p>
+                <p>Every piece of this puzzle had its place…</p>
+                <p>Just like every moment with you has slowly become a beautiful part of my life.</p>
+                <p>Somewhere between our conversations, laughter, silly fights, and patch-ups, you became my comfort, my peace, and one of the most special people in my life.</p>
+                <p><strong>Our future family picture 📸</strong></p>
+                <p>Your future family moments are coming soon…</p>
+                <p>And now… I have your surprise waiting for you ✨</p>
+            </div>
+        `;
+    }, 1000);
+}
 updateCountdown();
 renderSurpriseCards();
 setInterval(() => {
