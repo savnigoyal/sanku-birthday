@@ -1,6 +1,12 @@
-- [ ] Fix Love Jar rolls collision by implementing real no-overlap placement with retries + deterministic grid fallback
-- [ ] Ensure collision padding accounts for rotation/scale and hover lift
-- [ ] Quick manual test: open jar surprise and verify rolls don’t overlap/collide
-
-- [x] Sliding puzzle: fix structure (15 tiles + 1 empty), rendering, click movement, shuffling, and image slicing
+- [ ] Confirmed 18 June entry in surpriseSchedule and existing debug unlock keys
+- [ ] Update FORCE_UNLOCKED_KEYS to include 2026-06-18
+- [ ] Change 2026-06-18 surprise type to jumbledGame
+- [ ] Add openSurprise() branch for jumbledGame to render/initialize the game modal
+- [ ] Implement jumbled words game logic (6 levels, progress counter, case-insensitive checks)
+- [ ] After final success, show ACCESS GRANTED + open coupon reward menu after 1.5s
+- [ ] Implement coupon reward menu with 3 sections, 1 selection each, pink glow for selected
+- [ ] Implement redeem logic + generated summary message
+- [ ] Add WhatsApp share button using wa.me URL
+- [ ] Add required CSS for game + reward menu
+- [ ] Smoke test: open 18 June immediately, solve game, redeem, share button builds message
 

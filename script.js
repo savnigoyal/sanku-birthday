@@ -283,7 +283,6 @@ let confettiRAF = null;
 
 // DEBUG: force-unlock specific surprises for preview (remove or clear when done)
 const FORCE_UNLOCKED_KEYS = [
-    // add surprise keys here to force them unlocked for preview
     '2026-06-16',
     '2026-06-17'
 ];
@@ -738,9 +737,8 @@ const surpriseSchedule = [
         key: '2026-06-18',
         label: '18 June ❤️',
         display: '18 June',
-        title: 'A Heartfelt Whisper',
-        type: 'note',
-        content: 'On this day, I want to whisper how much I adore you. Your smile, your kindness, and the way you care are my favorite parts of life.'
+        title: "Today’s challenge ❤️",
+        type: 'jumbledGame'
     },
     {
         key: '2026-06-19',
@@ -902,6 +900,11 @@ function openSurprise(key) {
         openSurpriseContent.innerHTML = buildPuzzleContent();
         openSurpriseModal.classList.remove('hidden');
         initializePuzzle();
+
+    } else if (item.type === 'jumbledGame') {
+        openSurpriseContent.innerHTML = buildJumbledWordsGameContent();
+        openSurpriseModal.classList.remove('hidden');
+        initJumbledWordsGame();
 
     } else if (item.type === 'final') {
         openSurpriseContent.innerHTML = buildFinalContent(item);
@@ -1263,7 +1266,362 @@ function buildGenericContent(item) {
     return `<p>${item.content}</p>`;
 }
 
+// -----------------------------
+// 18 June: Jumbled Words + Reward Menu
+// -----------------------------
+const JUMBLED_WORDS_GAME = {
+    heading: "Today’s challenge ❤️",
+    subtext: "Solve all jumbled words to unlock your reward menu.",
+    levels: [
+        { level: 1, label: 'Level 1 → Easy', startWordIndex: 0, endWordIndex: 1 },
+        { level: 2, label: 'Level 2 → Medium', startWordIndex: 2, endWordIndex: 3 },
+        { level: 3, label: 'Level 3 → Final Challenge', startWordIndex: 4, endWordIndex: 5 },
+    ],
+    wordsInOrder: [
+        { jumbled: 'EVOL', answer: 'LOVE' },
+        { jumbled: 'TRAEH', answer: 'HEART' },
+        { jumbled: 'YADHTRIB', answer: 'BIRTHDAY' },
+        { jumbled: 'INVAS', answer: 'SAVNI' },
+        { jumbled: 'UKNAS', answer: 'SANKU' },
+        { jumbled: 'UOYEVOLI', answer: 'ILOVEYOU' },
+    ],
+};
+
+function buildJumbledWordsGameContent() {
+    return `
+        <div class="jumbled-game-wrap">
+            <div class="jumbled-game-header">
+                <h2>${JUMBLED_WORDS_GAME.heading}</h2>
+                <p class="jumbled-game-sub">${JUMBLED_WORDS_GAME.subtext}</p>
+            </div>
+
+            <div class="jumbled-game-meta">
+                <div id="jumbledLevelIndicator" class="jumbled-level-indicator">${JUMBLED_WORDS_GAME.levels[0].label}</div>
+                <div id="jumbledProgress" class="jumbled-progress" aria-live="polite">Solved: 0 / 6</div>
+            </div>
+
+            <div class="jumbled-word-card" aria-live="polite">
+                <div class="jumbled-word-label">Your jumbled word</div>
+                <div id="jumbledWordDisplay" class="jumbled-word-display">EVOL</div>
+                <div id="jumbledFeedback" class="jumbled-feedback" aria-live="polite"></div>
+            </div>
+
+            <form id="jumbledForm" class="jumbled-form" autocomplete="off">
+                <label for="jumbledAnswerInput" class="jumbled-input-label">Type the correct word</label>
+                <input id="jumbledAnswerInput" class="jumbled-input" type="text" inputmode="text" spellcheck="false" />
+                <button id="jumbledSubmitBtn" class="primary-button jumbled-submit" type="submit">Submit</button>
+            </form>
+
+            <div class="jumbled-success-stage hidden" id="jumbledSuccessStage">
+                <div class="jumbled-success-anim" aria-hidden="true">✨</div>
+                <div class="jumbled-success-text">
+                    <div id="jumbledSuccessLine1" class="jumbled-success-line">ACCESS GRANTED ❤️</div>
+                    <div id="jumbledSuccessLine2" class="jumbled-success-line">Reward Menu Unlocked</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+let jumbledWordsState = {
+    wordIndex: 0,
+    solvedCount: 0,
+    isComplete: false,
+    formSubmitted: false,
+};
+
+function normalizeAnswer(s) {
+    return String(s || '').trim().toUpperCase();
+}
+
+function updateJumbledLevelIndicator(index) {
+    const el = document.getElementById('jumbledLevelIndicator');
+    if (!el) return;
+    // index is current wordIndex, map by solved/next word
+    // level rules in setup are based on word indices.
+    const levels = JUMBLED_WORDS_GAME.levels;
+    const matched = levels.find(l => index >= l.startWordIndex && index <= l.endWordIndex) || levels[0];
+    el.textContent = matched.label;
+}
+
+function updateJumbledProgress() {
+    const el = document.getElementById('jumbledProgress');
+    if (!el) return;
+    el.textContent = `Solved: ${jumbledWordsState.solvedCount} / 6`;
+}
+
+function showJumbledFeedback(text, type) {
+    const el = document.getElementById('jumbledFeedback');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('is-correct', 'is-wrong');
+    if (type === 'correct') el.classList.add('is-correct');
+    if (type === 'wrong') el.classList.add('is-wrong');
+}
+
+function setJumbledWord(word) {
+    const display = document.getElementById('jumbledWordDisplay');
+    if (!display) return;
+    display.textContent = word;
+}
+
+function initJumbledWordsGame() {
+    // reset state
+    jumbledWordsState = { wordIndex: 0, solvedCount: 0, isComplete: false, formSubmitted: false };
+
+    const input = document.getElementById('jumbledAnswerInput');
+    const form = document.getElementById('jumbledForm');
+    const submitBtn = document.getElementById('jumbledSubmitBtn');
+    const successStage = document.getElementById('jumbledSuccessStage');
+
+    if (!input || !form) return;
+
+    input.value = '';
+    setJumbledWord(JUMBLED_WORDS_GAME.wordsInOrder[0].jumbled);
+    updateJumbledLevelIndicator(0);
+    updateJumbledProgress();
+    showJumbledFeedback('', null);
+    successStage?.classList.add('hidden');
+
+    // level indicator on initial
+
+    input.focus();
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (jumbledWordsState.isComplete) return;
+        if (submitBtn) submitBtn.disabled = true;
+
+        const current = JUMBLED_WORDS_GAME.wordsInOrder[jumbledWordsState.wordIndex];
+        const guess = normalizeAnswer(input.value);
+        const correct = normalizeAnswer(current.answer);
+
+        if (guess === correct) {
+            jumbledWordsState.solvedCount++;
+            jumbledWordsState.wordIndex++;
+            updateJumbledProgress();
+            showJumbledFeedback('Nice! ❤️', 'correct');
+
+            // success animation: small flash then next word
+            setTimeout(() => {
+                if (jumbledWordsState.wordIndex >= JUMBLED_WORDS_GAME.wordsInOrder.length) {
+                    completeJumbledWordsGame();
+                    return;
+                }
+                const next = JUMBLED_WORDS_GAME.wordsInOrder[jumbledWordsState.wordIndex];
+                setJumbledWord(next.jumbled);
+                updateJumbledLevelIndicator(jumbledWordsState.wordIndex);
+                input.value = '';
+                showJumbledFeedback('', null);
+                submitBtn && (submitBtn.disabled = false);
+                input.focus();
+            }, 520);
+        } else {
+            // wrong answer
+            showJumbledFeedback('Try again ❤️', 'wrong');
+            input.value = '';
+            submitBtn && (submitBtn.disabled = false);
+            input.focus();
+        }
+    });
+}
+
+function completeJumbledWordsGame() {
+    const successStage = document.getElementById('jumbledSuccessStage');
+    const stageLine1 = document.getElementById('jumbledSuccessLine1');
+    const stageLine2 = document.getElementById('jumbledSuccessLine2');
+    const form = document.getElementById('jumbledForm');
+    const input = document.getElementById('jumbledAnswerInput');
+
+    jumbledWordsState.isComplete = true;
+
+    if (form) form.reset?.();
+    if (input) input.value = '';
+
+    if (stageLine1) stageLine1.textContent = 'ACCESS GRANTED ❤️';
+    if (stageLine2) stageLine2.textContent = 'Reward Menu Unlocked';
+
+    successStage?.classList.remove('hidden');
+    form?.classList.add('hidden');
+
+    // wait 1.5 seconds then open reward menu
+    setTimeout(() => {
+        openRewardMenu();
+    }, 1500);
+}
+
+let couponSelectionState = {
+    cute: null,
+    spicy: null,
+    vip: null,
+};
+
+const COUPONS = {
+    cute: [
+        'Cute Selfie Coupon',
+        'Baby Voice Note Coupon',
+        'Good Morning Spam Coupon',
+        'Virtual Cuddle Coupon',
+        '10 Random Pics Coupon',
+    ],
+    spicy: [
+        'Spicy Pic Coupon',
+        'Mirror Selfie Coupon',
+        'Outfit Choice Coupon',
+        'Secret Content Coupon',
+        'Flirty Text Session Coupon',
+    ],
+    vip: [
+        'Premium Girlfriend Mode',
+        'No Fight Pass',
+        'You Plan the Date',
+        'Steal My Time',
+        'Unlimited Compliments',
+    ],
+};
+
+let lastRedeemMessage = '';
+
+function buildRewardMenuContent() {
+    return `
+        <div class="reward-menu-wrap">
+            <div class="reward-menu-header">
+                <h2>🎁 Coupon Reward Menu</h2>
+                <p class="reward-menu-sub">Choose 1 from this section</p>
+            </div>
+
+            <div class="reward-sections">
+                ${renderCouponSection('cute', 'Cute Coupons', COUPONS.cute)}
+                ${renderCouponSection('spicy', 'Spicy Coupons', COUPONS.spicy)}
+                ${renderCouponSection('vip', 'VIP Treatment', COUPONS.vip)}
+            </div>
+
+            <div class="reward-actions">
+                <button id="redeemBtn" class="primary-button reward-redeem disabled" type="button" disabled>
+                    Redeem My Rewards 🎁
+                </button>
+                <button id="whatsAppShareBtn" class="primary-button reward-whatsapp" type="button">
+                    Share on WhatsApp 💚
+                </button>
+            </div>
+
+            <div id="redeemStatus" class="reward-status" aria-live="polite"></div>
+        </div>
+    `;
+}
+
+function renderCouponSection(key, title, items) {
+    const safeKey = String(key);
+    return `
+        <section class="reward-section" data-section-key="${safeKey}">
+            <div class="reward-section-title">${title}</div>
+            <div class="reward-coupons-grid">
+                ${items.map((coupon) => `
+                    <button type="button" class="reward-coupon" data-coupon-value="${escapeHtmlAttr(coupon)}" data-section-key="${safeKey}">
+                        ${escapeHtml(coupon)}
+                    </button>
+                `).join('')}
+            </div>
+        </section>
+    `;
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '<')
+        .replaceAll('>', '>')
+        .replaceAll('"', '"')
+        .replaceAll("'", '&#039;');
+}
+
+function escapeHtmlAttr(str) {
+    return escapeHtml(str).replaceAll('`', '&#096;');
+}
+
+function applyCouponSelectionUI() {
+    const all = document.querySelectorAll('.reward-coupon[data-section-key]');
+    all.forEach(btn => {
+        const section = btn.getAttribute('data-section-key');
+        const val = btn.getAttribute('data-coupon-value');
+        const selected = (section === 'cute' && couponSelectionState.cute === val) ||
+            (section === 'spicy' && couponSelectionState.spicy === val) ||
+            (section === 'vip' && couponSelectionState.vip === val);
+        btn.classList.toggle('selected-glow', selected);
+    });
+}
+
+function updateRedeemButtonState() {
+    const redeemBtn = document.getElementById('redeemBtn');
+    if (!redeemBtn) return;
+    const ready = !!(couponSelectionState.cute && couponSelectionState.spicy && couponSelectionState.vip);
+    redeemBtn.disabled = !ready;
+    redeemBtn.classList.toggle('disabled', !ready);
+    redeemBtn.textContent = 'Redeem My Rewards 🎁';
+}
+
+function openRewardMenu() {
+    couponSelectionState = { cute: null, spicy: null, vip: null };
+    lastRedeemMessage = '';
+
+    openSurpriseContent.innerHTML = buildRewardMenuContent();
+
+    // ensure top
+    try {
+        openSurpriseModal?.scrollTo({ top: 0 });
+    } catch (e) {}
+
+    // attach coupon click handlers (only ONE per section)
+    document.querySelectorAll('.reward-coupon').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const section = btn.getAttribute('data-section-key');
+            const value = btn.getAttribute('data-coupon-value');
+
+            if (section === 'cute') couponSelectionState.cute = value;
+            if (section === 'spicy') couponSelectionState.spicy = value;
+            if (section === 'vip') couponSelectionState.vip = value;
+
+            applyCouponSelectionUI();
+            updateRedeemButtonState();
+
+            const statusEl = document.getElementById('redeemStatus');
+            if (statusEl) statusEl.textContent = '';
+        });
+    });
+
+    const redeemBtn = document.getElementById('redeemBtn');
+    const shareBtn = document.getElementById('whatsAppShareBtn');
+
+    redeemBtn?.addEventListener('click', () => {
+        const message = buildRedeemMessage();
+        lastRedeemMessage = message;
+        const statusEl = document.getElementById('redeemStatus');
+        if (statusEl) statusEl.textContent = message;
+
+        // allow share after redeem
+        shareBtn?.classList.add('ready');
+    });
+
+    shareBtn?.addEventListener('click', () => {
+        if (!lastRedeemMessage) {
+            const statusEl = document.getElementById('redeemStatus');
+            if (statusEl) statusEl.textContent = 'Select coupons and redeem first ❤️';
+            return;
+        }
+        window.open(`https://wa.me/?text=${encodeURIComponent(lastRedeemMessage)}`, '_blank');
+    });
+
+    // initial UI state
+    applyCouponSelectionUI();
+    updateRedeemButtonState();
+}
+
+function buildRedeemMessage() {
+    return `I completed today’s birthday challenge ❤️\n\nI choose:\n🧸 ${couponSelectionState.cute}\n🌶️ ${couponSelectionState.spicy}\n👑 ${couponSelectionState.vip}\n\nReady to redeem 😏`;
+}
+
 function handleSurpriseCardClick(event) {
+
     let card = event.target;
     if (card && card.nodeType !== Node.ELEMENT_NODE) {
         card = card.parentElement;

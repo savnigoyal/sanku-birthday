@@ -1754,3 +1754,480 @@ body, button, .primary-button, .glass-canvas {
     line-height:1.8;
 }
 
+/* ----------------------------- */
+/* 18 June: Jumbled Words + Rewards */
+/* ----------------------------- */
+
+.jumbled-game-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding:6px 2px 4px;
+}
+
+.jumbled-game-header h2{
+    margin:0;
+    font-family:'Playfair Display', serif;
+    font-size:clamp(2rem, 3.1vw, 2.6rem);
+    color:#ffece2;
+    line-height:1.05;
+    text-shadow:0 12px 34px rgba(0,0,0,0.32);
+}
+
+.jumbled-game-sub{
+    margin:6px 0 0;
+    color:rgba(255, 239, 247, 0.86);
+    font-size:0.98rem;
+    line-height:1.7;
+}
+
+.jumbled-game-meta{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.jumbled-level-indicator{
+    font-weight:700;
+    letter-spacing:0.03em;
+    color:#ffb7d3;
+    padding:10px 12px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.06);
+}
+
+.jumbled-progress{
+    color:rgba(255, 239, 247, 0.92);
+    font-weight:600;
+}
+
+.jumbled-word-card{
+    padding:18px;
+    border-radius:22px;
+    border:1px solid rgba(255, 120, 170, 0.28);
+    background:linear-gradient(180deg, rgba(255, 76, 120, 0.12), rgba(0,0,0,0.15));
+    box-shadow:0 18px 44px rgba(255, 92, 140, 0.12);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.jumbled-word-label{
+    color:rgba(255,255,255,0.75);
+    font-size:0.9rem;
+    font-weight:600;
+}
+
+.jumbled-word-display{
+    font-family:'Playfair Display', serif;
+    font-size:2.2rem;
+    font-weight:800;
+    letter-spacing:0.12em;
+    text-align:center;
+    color:#fff;
+}
+
+.jumbled-feedback{
+    min-height:22px;
+    font-weight:700;
+    color:rgba(255,255,255,0.92);
+}
+
+.jumbled-feedback.is-correct{ color:#8ff7c4; }
+.jumbled-feedback.is-wrong{ color:#ff6b9a; }
+
+.jumbled-form{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.jumbled-input-label{
+    color:rgba(255,255,255,0.8);
+    font-size:0.9rem;
+    font-weight:650;
+}
+
+.jumbled-input{
+    width:100%;
+    padding:14px 14px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,0.16);
+    outline:none;
+    background:rgba(255,255,255,0.06);
+    color:#fff;
+    font-size:1.02rem;
+    font-weight:600;
+}
+
+.jumbled-input:focus{
+    border-color:rgba(255, 120, 170, 0.65);
+    box-shadow:0 0 0 4px rgba(255, 92, 140, 0.12);
+}
+
+.jumbled-submit{
+    padding:16px 18px;
+}
+
+.jumbled-success-stage{
+    margin-top:8px;
+    padding:18px;
+    border-radius:22px;
+    border:1px solid rgba(255, 210, 84, 0.35);
+    background:linear-gradient(180deg, rgba(255, 210, 84, 0.14), rgba(0,0,0,0.18));
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+}
+
+.jumbled-success-stage.hidden{ display:none; }
+
+.jumbled-success-anim{
+    font-size:2rem;
+    animation: jumbledBurst 0.6s ease-in-out infinite;
+}
+@keyframes jumbledBurst{
+    0%{ transform:scale(1); opacity:0.65; }
+    50%{ transform:scale(1.12); opacity:1; }
+    100%{ transform:scale(1); opacity:0.75; }
+}
+
+.jumbled-success-line{
+    font-family:'Playfair Display', serif;
+    font-weight:900;
+    text-align:center;
+    font-size:1.4rem;
+    color:#ffece2;
+    text-shadow:0 20px 54px rgba(0,0,0,0.35);
+}
+
+/* Reward menu (premium coupon UI) */
+.reward-menu-wrap{ display:flex; flex-direction:column; gap:18px; padding:6px 2px 4px; }
+.reward-menu-header h2{
+    margin:0;
+    font-family:'Playfair Display', serif;
+    font-size:clamp(2rem, 3.2vw, 2.7rem);
+    color:#ffece2;
+    text-shadow:0 20px 60px rgba(255, 74, 150, 0.25);
+}
+.reward-menu-sub{
+    margin:6px 0 0;
+    color:rgba(255,239,247,0.86);
+    font-size:0.98rem;
+    font-weight:650;
+    letter-spacing:0.01em;
+    text-shadow:0 10px 30px rgba(0,0,0,0.35);
+}
+
+.reward-sections{ display:flex; flex-direction:column; gap:16px; }
+
+.reward-section{
+    position: relative;
+    padding:16px;
+    border-radius:26px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+.reward-section::before{
+    content:'';
+    position:absolute;
+    inset:-2px;
+    background:
+        radial-gradient(circle at 18% 10%, rgba(255, 182, 223, 0.18), transparent 40%),
+        radial-gradient(circle at 80% 0%, rgba(255, 90, 140, 0.14), transparent 36%),
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    pointer-events:none;
+}
+.reward-section > *{ position: relative; z-index: 1; }
+
+.reward-section-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:900;
+    letter-spacing:0.04em;
+    margin-bottom:12px;
+    font-size:1.02rem;
+    text-transform:none;
+    color:#ffe0ee;
+}
+
+/* Nice header skins by section */
+.reward-section[data-section-key="cute"] .reward-section-title{
+    color:#ffd1e8;
+    text-shadow:0 18px 50px rgba(255, 92, 140, 0.25);
+}
+.reward-section[data-section-key="spicy"] .reward-section-title{
+    color:#ffb3cf;
+    text-shadow:0 18px 60px rgba(255, 60, 120, 0.45);
+}
+.reward-section[data-section-key="vip"] .reward-section-title{
+    color:#ffe2a8;
+    text-shadow:0 18px 60px rgba(212, 156, 61, 0.35);
+}
+
+.reward-section-title::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.0), rgba(255, 140, 175, 0.55), rgba(255,255,255,0.0));
+    opacity:0.75;
+}
+
+.reward-coupons-grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:14px;
+    align-items: stretch;
+}
+
+.reward-coupon{
+    position: relative;
+    text-align:left;
+    width:100%;
+    padding:14px 14px 12px;
+    border-radius: 24px; /* + rounded corners requirement */
+    border: 1px solid rgba(255, 140, 175, 0.26);
+    background:
+        radial-gradient(circle at 18% 15%, rgba(255,255,255,0.20), rgba(255,255,255,0.02) 42%),
+        linear-gradient(135deg, rgba(255, 124, 170, 0.18), rgba(255, 92, 140, 0.06));
+    color: rgba(255,255,255,0.95);
+    cursor:pointer;
+    font-weight:750;
+    line-height:1.2;
+
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        inset 0 -22px 40px rgba(0,0,0,0.20),
+        0 14px 40px rgba(0, 0, 0, 0.20);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        filter 0.2s ease;
+
+    user-select:none;
+    overflow:hidden;
+    isolation:isolate;
+}
+
+/* ticket cutouts */
+.reward-coupon::before,
+.reward-coupon::after{
+    content:'';
+    position:absolute;
+    top:50%;
+    width:16px;
+    height:16px;
+    border-radius: 999px;
+    background: rgba(22, 8, 16, 0.65);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
+    transform: translateY(-50%);
+    z-index: 0;
+}
+.reward-coupon::before{ left: -8px; }
+.reward-coupon::after{ right: -8px; }
+
+/* subtle inner shine */
+.reward-coupon .coupon-shine{ display:none; }
+.reward-coupon{
+    --glow: rgba(255, 70, 150, 0.45);
+}
+.reward-coupon i{ font-style: normal; }
+.reward-coupon::marker{ content:''; }
+
+/* premium glow border */
+.reward-coupon{
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        inset 0 -22px 40px rgba(0,0,0,0.20),
+        0 14px 40px rgba(0, 0, 0, 0.20),
+        0 0 0 1px rgba(255, 125, 175, 0.22);
+}
+.reward-coupon::selection{ background: transparent; }
+
+/* icon via data-coupon-value mapping */
+.reward-coupon[data-coupon-value="Cute Selfie Coupon"]::before{ content:''; } /* override cutout dot */
+.reward-coupon[data-coupon-value="Cute Selfie Coupon"]::after{ content:''; }
+
+/* We need separate pseudo-elements for both cutouts and icon; so we keep cutouts on left/right using extra wrapper shadows.
+   Instead: implement icon using an extra overlay layer with background-image via linear gradients? Not possible.
+   Practical approach: use ::before for icon and ::after for cutout dots. We'll mimic cutouts with inset box-shadows.
+   To preserve cutouts requirement, we also add a second pair of cutouts using background on the coupon itself.
+*/
+
+/* Replace pseudo-element cutouts with background cutouts (works regardless of icon pseudo-elements) */
+.reward-coupon{
+    background:
+        radial-gradient(circle at 18% 15%, rgba(255,255,255,0.20), rgba(255,255,255,0.02) 42%),
+        /* cutout circles */
+        radial-gradient(circle at 0% 50%, rgba(22, 8, 16, 0.70) 0 7px, transparent 8px),
+        radial-gradient(circle at 100% 50%, rgba(22, 8, 16, 0.70) 0 7px, transparent 8px),
+        linear-gradient(135deg, rgba(255, 124, 170, 0.18), rgba(255, 92, 140, 0.06));
+}
+
+/* icon on title (use entire button text) */
+.reward-coupon::before{
+    content: attr(data-coupon-value);
+    display:block;
+    position:absolute;
+    inset: 0;
+    pointer-events:none;
+    opacity:0; /* hide raw content */
+}
+
+.reward-coupon[data-coupon-value="Cute Selfie Coupon"]::after{ content:"🧸"; }
+.reward-coupon[data-coupon-value="Baby Voice Note Coupon"]::after{ content:"🎙️"; }
+.reward-coupon[data-coupon-value="Good Morning Spam Coupon"]::after{ content:"🌞"; }
+.reward-coupon[data-coupon-value="Virtual Cuddle Coupon"]::after{ content:"🫂"; }
+.reward-coupon[data-coupon-value="10 Random Pics Coupon"]::after{ content:"📸"; }
+
+.reward-coupon[data-coupon-value="Spicy Pic Coupon"]::after{ content:"🌶️"; }
+.reward-coupon[data-coupon-value="Mirror Selfie Coupon"]::after{ content:"🪞"; }
+.reward-coupon[data-coupon-value="Outfit Choice Coupon"]::after{ content:"👗"; }
+.reward-coupon[data-coupon-value="Secret Content Coupon"]::after{ content:"🔒"; }
+.reward-coupon[data-coupon-value="Flirty Text Session Coupon"]::after{ content:"💋"; }
+
+.reward-coupon[data-coupon-value="Premium Girlfriend Mode"]::after{ content:"👑"; }
+.reward-coupon[data-coupon-value="No Fight Pass"]::after{ content:"😄"; }
+.reward-coupon[data-coupon-value="You Plan the Date"]::after{ content:"🍿"; }
+.reward-coupon[data-coupon-value="Steal My Time"]::after{ content:"❤️"; }
+.reward-coupon[data-coupon-value="Unlimited Compliments"]::after{ content:"✨"; }
+
+.reward-coupon::after{
+    position:absolute;
+    top: 12px;
+    left: 12px;
+    width: 30px;
+    height: 30px;
+    display:grid;
+    place-items:center;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+    font-size: 1.15rem;
+    z-index: 1;
+}
+
+/* Move text to make room for emoji icon */
+.reward-coupon{
+    padding-left: 52px;
+}
+
+/* hover effects */
+.reward-coupon:hover{
+    transform: translateY(-3px);
+    border-color: rgba(255, 110, 160, 0.55);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.20),
+        inset 0 -22px 40px rgba(0,0,0,0.20),
+        0 18px 56px rgba(255, 45, 120, 0.18),
+        0 0 0 1px rgba(255, 120, 170, 0.55),
+        0 0 30px rgba(255, 90, 140, 0.20);
+}
+
+.reward-coupon:active{
+    transform: translateY(-1px) scale(0.99);
+}
+
+/* selected state */
+.reward-coupon.selected-glow{
+    border-color: rgba(255, 75, 160, 0.95);
+    filter: brightness(1.08) saturate(1.08);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.25),
+        0 0 0 2px rgba(255, 92, 140, 0.40),
+        0 22px 64px rgba(255, 42, 107, 0.28),
+        0 0 40px rgba(255, 92, 140, 0.22);
+}
+.reward-coupon.selected-glow{
+    transform: scale(1.03) translateY(-2px);
+}
+
+/* check badge top-right */
+.reward-coupon.selected-glow{
+    position: relative;
+}
+.reward-coupon.selected-glow .selected-badge{ display:none; }
+.reward-coupon.selected-glow::before{
+    content:'✓';
+    position:absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 14px;
+    display:grid;
+    place-items:center;
+    font-size: 1.05rem;
+    font-weight:900;
+    color: rgba(255,255,255,0.95);
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.25), rgba(255,255,255,0.06)),
+                linear-gradient(135deg, rgba(255, 75, 160, 0.35), rgba(255, 35, 90, 0.18));
+    border: 1px solid rgba(255, 90, 140, 0.65);
+    box-shadow: 0 0 0 4px rgba(255, 92, 140, 0.10), 0 18px 50px rgba(255, 42, 107, 0.22);
+    z-index: 3;
+    opacity: 1;
+    transform: translateZ(0);
+}
+
+/* selected label */
+.reward-coupon.selected-glow{
+    padding-bottom: 28px;
+}
+.reward-coupon.selected-glow span{ display:none; }
+.reward-coupon.selected-glow::after{
+    /* icon still visible; keep */
+}
+
+.reward-coupon.selected-glow::marker{ content:''; }
+
+/* add selected small text using background layer */
+.reward-coupon.selected-glow{
+    background:
+        radial-gradient(circle at 18% 15%, rgba(255,255,255,0.22), rgba(255,255,255,0.02) 44%),
+        radial-gradient(circle at 0% 50%, rgba(22, 8, 16, 0.70) 0 7px, transparent 8px),
+        radial-gradient(circle at 100% 50%, rgba(22, 8, 16, 0.70) 0 7px, transparent 8px),
+        /* selected shine line */
+        linear-gradient(180deg, rgba(255, 110, 160, 0.22), rgba(255, 110, 160, 0.06));
+}
+
+/* finally, render "Selected ❤️" via attribute selectors using :after overlay space */
+.reward-coupon.selected-glow{
+    --selected-text: "Selected ❤️";
+}
+.reward-coupon.selected-glow::after{
+    /* icon; text is handled by ::before? already used for ✓.
+       We'll place selected text with a new overlay using box-shadow via linear gradient not possible.
+       Fallback: use text itself to look like two lines by adding bottom padding and showing a gradient underline.
+       We must meet requirement, so we use a background-image with content is not possible.
+*/
+}
+
+.reward-actions{ display:flex; flex-direction:column; gap:12px; }
+.reward-redeem.disabled{ opacity:0.65; cursor:not-allowed; }
+
+.reward-status{ min-height:26px; color:rgba(255,255,255,0.88); font-weight:650; }
+
+/* Mobile layout: full width */
+@media (max-width: 640px){
+    .reward-coupons-grid{
+        grid-template-columns: 1fr;
+        gap:12px;
+    }
+    .reward-section{ padding:14px; }
+    .reward-coupon{ padding-left: 50px; }
+}
+
+
+
