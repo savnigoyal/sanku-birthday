@@ -284,8 +284,11 @@ let confettiRAF = null;
 // DEBUG: force-unlock specific surprises for preview (remove or clear when done)
 const FORCE_UNLOCKED_KEYS = [
     '2026-06-16',
-    '2026-06-17'
+    '2026-06-17',
+    '2026-06-18',
+    '2026-06-19'
 ];
+
 
 function playPopSound() {
     try {
@@ -876,9 +879,22 @@ function openSurprise(key) {
     openSurpriseIcon.textContent =
         item.type === 'final' ? '🎂' : '🎁';
 
+    // Special override: 19 June becomes the Girlfriend Mode Wheel
+    if (item.key === '2026-06-19') {
+        openSurpriseIcon.textContent = '🎡';
+        openSurpriseTitle.textContent = item.title;
+
+        openSurpriseContent.innerHTML = buildGirlfriendModeWheelContent();
+        openSurpriseModal.classList.remove('hidden');
+
+        initGirlfriendModeWheel();
+        return;
+    }
+
     openSurpriseTitle.textContent = item.title;
 
     if (item.type === 'jar') {
+
         openSurpriseContent.innerHTML = buildJarContent(item);
         attachJarInteractions(item);
         openSurpriseModal.classList.remove('hidden');
@@ -1266,9 +1282,236 @@ function buildGenericContent(item) {
     return `<p>${item.content}</p>`;
 }
 
+// -------------------------------------------------
+// 19 June: Girlfriend Mode Wheel (Spin Wheel)
+// -------------------------------------------------
+const GIRLFRIEND_MODE_WHEEL_SECTIONS = [
+    {
+        key: 'soft',
+        emoji: '🧸',
+        title: 'Soft Baby',
+        description: 'Extra cute texts, clingy energy, and baby mode activated.'
+    },
+
+    {
+        key: 'flirty',
+        emoji: '🌶️',
+        title: 'Flirty',
+        description: 'Teasing, playful flirting, and dangerous charm levels.'
+    },
+    {
+        key: 'princess',
+        emoji: '👑',
+        title: 'Princess',
+        description: 'Spoiled but adorable. Treat me like royalty today.'
+    },
+    {
+        key: 'romantic',
+        emoji: '💌',
+        title: 'Romantic',
+        description: 'Heartfelt messages, emotional texts, and love overload.'
+    },
+    {
+        key: 'nakhralu',
+        emoji: '😤',
+        title: 'Nakhralu',
+        description: 'Cute tantrums, playful nakhre, and extra attention demand.'
+    },
+    {
+        key: 'talkative',
+        emoji: '🎙️',
+        title: 'Talkative',
+        description: 'Unlimited yapping, random stories, gossip, and nonstop texting.'
+    },
+    {
+        key: 'shy',
+        emoji: '🤭',
+        title: 'Shy',
+        description: 'Soft replies, blush energy, and adorable awkwardness.'
+    },
+    {
+        key: 'menace',
+        emoji: '😈',
+        title: 'Menace',
+        description: 'Chaotic energy, roasts, mischief, and troublemaker mode.'
+    }
+];
+
+
+function buildGirlfriendModeWheelContent() {
+    return `
+        <div class="gf-wheel-wrap" data-wheel-context="gfWheel">
+            <div class="gf-wheel-heading">
+                <div class="gf-wheel-title">🎡 Girlfriend Mode Wheel</div>
+                <div class="gf-wheel-sub">“Spin the wheel to choose which version of me you want texting you today 😏”</div>
+            </div>
+            <div class="gf-wheel-note">“Whatever the wheel chooses will be your girlfriend mode reward for today. Choose wisely… or let fate decide ❤️”</div>
+
+            <div class="gf-wheel-ui" role="group" aria-label="Girlfriend mode wheel">
+                <div class="gf-wheel-pointer" aria-hidden="true"></div>
+                <div class="gf-wheel" id="gfWheel" aria-hidden="false">
+                    ${GIRLFRIEND_MODE_WHEEL_SECTIONS.map((s) => `
+                        <div class="gf-slice" data-slice-key="${s.key}">
+                            <div class="gf-slice-inner">
+                                <div class="gf-slice-label" aria-hidden="true">${s.title}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div class="gf-wheel-gloss" aria-hidden="true"></div>
+                </div>
+
+
+                <div class="gf-wheel-center">
+                    <button class="gf-spin-btn" id="gfSpinBtn" type="button" aria-label="Spin the wheel">SPIN ❤️</button>
+                </div>
+            </div>
+
+            <div class="gf-result hidden" id="gfWheelResult" aria-live="polite"></div>
+
+            <div class="gf-share-row hidden" id="gfWheelShareRow">
+                <button class="gf-share-btn" id="gfShareBtn" type="button">Share My Result 💚</button>
+            </div>
+        </div>
+    `;
+}
+
+
+function initGirlfriendModeWheel() {
+    const wheelEl = document.getElementById('gfWheel');
+    const spinBtn = document.getElementById('gfSpinBtn');
+    const resultEl = document.getElementById('gfWheelResult');
+    const shareRow = document.getElementById('gfWheelShareRow');
+    const shareBtn = document.getElementById('gfShareBtn');
+
+    if (!wheelEl || !spinBtn || !resultEl || !shareRow) return;
+
+    // prevent double init
+    spinBtn.onclick = null;
+    shareBtn && (shareBtn.onclick = null);
+
+    // layout slices precisely
+    const slices = Array.from(wheelEl.querySelectorAll('.gf-slice'));
+    const count = GIRLFRIEND_MODE_WHEEL_SECTIONS.length;
+    const sliceAngle = 360 / count;
+
+    // Layout slices for a classic prize wheel: rotate only.
+    // Text stays horizontal via CSS, so we do NOT skew/rotate inner content.
+    slices.forEach((sliceEl, i) => {
+        sliceEl.style.transform = `rotate(${i * sliceAngle}deg)`;
+    });
+
+
+    let isSpinning = false;
+    let lastResult = null;
+
+    function setResult(result) {
+        lastResult = result;
+        resultEl.classList.remove('hidden');
+        shareRow.classList.remove('hidden');
+
+        resultEl.innerHTML = `
+            <div class="gf-result-card">
+                <div class="gf-result-top">🌟 Selected Mode</div>
+                <div class="gf-result-mode">${result.emoji} ${result.title} Mode</div>
+                <div class="gf-result-desc">${result.description}</div>
+            </div>
+        `;
+
+
+
+        // confetti
+        try {
+            runConfetti(3200);
+        } catch (e) {}
+    }
+
+    function spin() {
+        if (isSpinning) return;
+        isSpinning = true;
+
+        spinBtn.disabled = true;
+        spinBtn.classList.add('is-disabled');
+        resultEl.classList.add('hidden');
+        shareRow.classList.add('hidden');
+        resultEl.innerHTML = '';
+
+        // pick random section
+        const resultIndex = Math.floor(Math.random() * count);
+        const result = GIRLFRIEND_MODE_WHEEL_SECTIONS[resultIndex];
+
+        // Classic math: wheel starts at 0deg, pointer at top.
+        // Each slice i occupies [i*sliceAngle, (i+1)*sliceAngle] relative to wheel.
+        // Rotate wheel so the selected slice center points to the pointer.
+        const sliceCenter = resultIndex * sliceAngle + sliceAngle / 2;
+
+        // 4–5 seconds, smooth, ease-out stopping.
+        const durationMs = 4800;
+        const ease = 'cubic-bezier(0.22, 0.9, 0.25, 1)';
+
+        // Total rotations 6–9 (realistic) + small jitter within slice.
+        const spins = 6 + Math.floor(Math.random() * 4);
+        const baseRotation = spins * 360;
+
+        // Keep jitter, but NOT large enough to accidentally jump across slices.
+        // sliceAngle = 45deg, so jitter of +/- 1.25deg keeps it safely within the chosen slice.
+        const jitter = (Math.random() - 0.5) * (sliceAngle * 0.028);
+
+        // Rotate wheel so that chosen slice center lands under the pointer (top).
+        // Pointer is effectively at 0deg.
+        const finalRotation = baseRotation - sliceCenter + jitter;
+
+        // apply spin transform (ensure wheel starts from a clean state)
+        wheelEl.style.transition = `transform ${durationMs}ms ${ease}`;
+        wheelEl.style.transform = 'rotate(0deg)';
+
+
+        wheelEl.style.willChange = 'transform';
+
+
+        // first set to current rotation baseline
+        const computed = window.getComputedStyle(wheelEl);
+        const matrix = computed.transform;
+        let currentRotation = 0;
+        if (matrix && matrix !== 'none') {
+            // matrix(a,b,c,d,tx,ty) => rotation = atan2(b,a)
+            const match = matrix.match(/matrix\(([^)]+)\)/);
+            if (match && match[1]) {
+                const parts = match[1].split(',').map(s => parseFloat(s));
+                const a = parts[0];
+                const b = parts[1];
+                currentRotation = Math.atan2(b, a) * (180 / Math.PI);
+            }
+        }
+
+        const target = currentRotation + finalRotation;
+        wheelEl.style.transform = `rotate(${target}deg)`;
+
+        setTimeout(() => {
+            wheelEl.style.transition = 'none';
+            wheelEl.style.transform = wheelEl.style.transform;
+            setResult(result);
+            isSpinning = false;
+            spinBtn.disabled = false;
+            spinBtn.classList.remove('is-disabled');
+        }, durationMs + 40);
+
+    }
+
+    spinBtn.addEventListener('click', () => spin());
+
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+            if (!lastResult) return;
+            const message = `I spun the Girlfriend Mode Wheel ❤️\nToday I unlocked:\n${lastResult.emoji} ${lastResult.title}\n\nI’m ready for today’s reward 😏`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        });
+    }
+}
+
 // -----------------------------
 // 18 June: Jumbled Words + Reward Menu
 // -----------------------------
+
 const JUMBLED_WORDS_GAME = {
     heading: "Today’s challenge ❤️",
     subtext: "Solve all jumbled words to unlock your reward menu.",
@@ -1673,6 +1916,7 @@ function buildPuzzleContent() {
         <div class="puzzle-wrapper">
             <h3>Before today’s surprise unlocks, solve a harder puzzle ❤️</h3>
             <p>Arrange the pieces correctly. Fewer moves = more love ✨</p>
+
 
             <div id="moveCounter">Moves: 0</div>
             <div id="puzzleBoard" class="puzzle-board" aria-label="Sliding puzzle board" role="grid"></div>

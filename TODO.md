@@ -1,12 +1,23 @@
-- [ ] Confirmed 18 June entry in surpriseSchedule and existing debug unlock keys
-- [ ] Update FORCE_UNLOCKED_KEYS to include 2026-06-18
-- [ ] Change 2026-06-18 surprise type to jumbledGame
-- [ ] Add openSurprise() branch for jumbledGame to render/initialize the game modal
-- [ ] Implement jumbled words game logic (6 levels, progress counter, case-insensitive checks)
-- [ ] After final success, show ACCESS GRANTED + open coupon reward menu after 1.5s
-- [ ] Implement coupon reward menu with 3 sections, 1 selection each, pink glow for selected
-- [ ] Implement redeem logic + generated summary message
-- [ ] Add WhatsApp share button using wa.me URL
-- [ ] Add required CSS for game + reward menu
-- [ ] Smoke test: open 18 June immediately, solve game, redeem, share button builds message
+## TODO - Spin Wheel UI Fix
+
+### Step 1
+- Update `style.css` wheel CSS:
+  - Make wheel 400px on desktop.
+  - Remove slice skew/distortion.
+  - Ensure readable upright centered bold white labels.
+  - Add alternating pink/purple slice backgrounds with strong borders.
+
+### Step 2
+- Update `script.js` girlfriend wheel implementation:
+  - Use short mode names only for wheel labels.
+  - Render only emoji+short label inside slices.
+  - Keep descriptions only in the result card below the wheel.
+  - Fix slice rotation math for correct stopping under the pointer.
+  - Ensure animation duration is 4–5s with ease-out.
+
+### Step 3
+- Manual verification in browser:
+  - Wheel looks like classic prize wheel (perfect circle).
+  - All 8 labels readable and not cut.
+  - Result card shows selected mode + description.
 
