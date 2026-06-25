@@ -1,0 +1,46 @@
+Add the following CSS into style.css (end of file is fine):
+
+/* ----------------------------- */
+/* Today: falling hearts + voice note */
+/* ----------------------------- */
+.today-hearts-layer{
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 25;
+    filter: drop-shadow(0 0 14px rgba(255, 92, 140, 0.22));
+}
+
+.today-heart{
+    position: absolute;
+    top: -24px;
+    will-change: transform, opacity;
+    opacity: 0.85;
+    filter: blur(0.15px);
+    text-shadow:
+        0 0 10px rgba(255, 92, 140, 0.55),
+        0 0 18px rgba(255, 124, 170, 0.35);
+}
+
+#voiceNoteFallbackBtn{
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    transform: translateX(-50%);
+    z-index: 210;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 900;
+    background: linear-gradient(135deg, rgba(255, 76, 120, 0.95), rgba(255, 124, 182, 0.95));
+    color: #fff;
+    box-shadow: 0 20px 50px rgba(255, 92, 140, 0.25), 0 0 0 1px rgba(255,255,255,0.12);
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    display: none;
+}
+
+#voiceNoteFallbackBtn:hover{ transform: translateX(-50%) translateY(-2px); filter: brightness(1.06) saturate(1.1); }
+#voiceNoteFallbackBtn:active{ transform: translateX(-50%) translateY(-1px) scale(0.99); }
+
